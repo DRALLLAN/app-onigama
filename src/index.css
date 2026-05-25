@@ -1,0 +1,160 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-primary: #6f87a0;
+  --color-brand-bg: #070f17;
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+}
+
+/* Custom Frosted Glass classes compatible with utility-first Tailwind classes */
+.glass-card {
+  background: rgba(255, 255, 255, 0.03);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.glow-emerald {
+  box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
+}
+
+.glow-blue {
+  box-shadow: 0 0 25px rgba(111, 135, 160, 0.15);
+}
+
+.bg-gradient-radial {
+  background: 
+    radial-gradient(circle at 50% 0%, #1a2a3a 0%, #070f17 75%),
+    radial-gradient(circle at 100% 100%, #0d1b2a 0%, #070f17 100%);
+}
+
+/* Custom animation for spinner elements */
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 12s linear infinite;
+}
+
+/* User custom App.css styles */
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-in {
+  animation: fadeIn 0.5s ease-out forwards;
+}
+
+.delay-1 {
+  animation-delay: 0.1s;
+  opacity: 0;
+}
+
+.delay-2 {
+  animation-delay: 0.2s;
+  opacity: 0;
+}
+
+.delay-3 {
+  animation-delay: 0.3s;
+  opacity: 0;
+}
+
+.delay-4 {
+  animation-delay: 0.4s;
+  opacity: 0;
+}
+
+.delay-5 {
+  animation-delay: 0.5s;
+  opacity: 0;
+}
+
+/* Typography styles */
+.gradient-text {
+  background: linear-gradient(135deg, #FFD700, #FFA500);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Cards & containers */
+.onigama-card {
+  background: rgba(20, 20, 30, 0.85);
+  border: 1px solid rgba(111, 135, 160, 0.25);
+  border-radius: 20px;
+  padding: 24px;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+}
+
+.signal-card {
+  background: rgba(9, 18, 29, 0.61);
+  border: 1px solid rgba(111, 135, 160, 0.25);
+  border-radius: 16px;
+  padding: 20px;
+  transition: all 0.3s ease;
+}
+
+.signal-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(111, 135, 160, 0.2);
+  border-color: rgba(111, 135, 160, 0.4);
+}
+
+.signal-card:active {
+  transform: scale(0.98);
+}
+
+.price-display {
+  background: linear-gradient(135deg, rgba(111, 135, 160, 0.15), rgba(139, 92, 246, 0.15));
+  border: 2px solid rgba(111, 135, 160, 0.30);
+  border-radius: 20px;
+  padding: 24px;
+}
+
+/* Custom Scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(111, 135, 160, 0.5);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(111, 135, 160, 0.7);
+}
+
+/* Utilities */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+}
+
+/* Mobile Safe Area */
+@supports (padding: env(safe-area-inset-bottom)) {
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}
+
