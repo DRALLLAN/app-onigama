@@ -23,11 +23,11 @@ const initialAssets: LiveAssetData[] = [
     symbol: 'XAUUSD',
     name: 'Gold / Spot',
     nameFa: 'طلای جهانی (XAU)',
-    price: 2428.50,
-    prevPrice: 2428.50,
+    price: 4540.50,
+    prevPrice: 4540.50,
     change24h: 1.24,
-    high24h: 2445.00,
-    low24h: 2410.20,
+    high24h: 4560.00,
+    low24h: 4510.20,
     type: 'METALS'
   },
   {
@@ -182,6 +182,20 @@ export function useGoldPrice(refreshIntervalInSeconds = 4) {
   // Fetch from official unblocked APIs (Gold-API for metals, Binance for Cryptos + PAXG, ExchangeRate-API for direct Forex, Yahoo Finance with individual chart fallbacks for indices and oil)
   const fetchPrices = useCallback(async () => {
     try {
+      // 0. Primary Source: Fetch from custom Express API proxy (CORS-free server-side fetch)
+      let backendPricesMap: Record<string, { price: number; high: number; low: number; change: number }> | null = null;
+      try {
+        const backendRes = await fetch('/api/market-prices');
+        if (backendRes.ok) {
+          const json = await backendRes.json();
+          if (json.success && json.data) {
+            backendPricesMap = json.data;
+          }
+        }
+      } catch (err) {
+        console.warn("Backend market-prices API unreachable, using client proxies: ", err);
+      }
+
       // 1. Fetch from Gold Price API (CORS-enabled, free, unblocked spot prices for Gold and Silver)
       let goldApiData: Record<string, number> = {};
       try {
@@ -334,6 +348,16 @@ export function useGoldPrice(refreshIntervalInSeconds = 4) {
           const updated = { ...asset };
           updated.prevPrice = asset.price;
 
+          // If backend prices are successfully fetched, prioritize them
+          if (backendPricesMap && backendPricesMap[asset.symbol]) {
+            const b = backendPricesMap[asset.symbol];
+            updated.price = b.price;
+            updated.high24h = b.high;
+            updated.low24h = b.low;
+            updated.change24h = b.change;
+            return updated;
+          }
+
           // Align Cryptocurrency
           if (asset.symbol === 'BTCUSD' && binanceData['BTCUSD']) {
             const b = binanceData['BTCUSD'];
@@ -382,7 +406,7 @@ export function useGoldPrice(refreshIntervalInSeconds = 4) {
               if (silverPriceInUsd < updated.low24h) updated.low24h = silverPriceInUsd;
             } else {
               // High-precision Gold/Silver tracking ratio fallback
-              const goldPrice = goldApiData['XAUUSD'] || binanceData['XAUUSD']?.price || prevState.assets.find(a => a.symbol === 'XAUUSD')?.price || 2428.50;
+              const goldPrice = goldApiData['XAUUSD'] || binanceData['XAUUSD']?.price || prevState.assets.find(a => a.symbol === 'XAUUSD')?.price || 4540.50;
               const derivedSilver = +(goldPrice / 77.29).toFixed(2);
               updated.price = derivedSilver;
               if (derivedSilver > updated.high24h) updated.high24h = derivedSilver;

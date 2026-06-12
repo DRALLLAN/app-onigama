@@ -4,9 +4,11 @@ import { BottomNavigation } from './components/BottomNavigation';
 import { SplashScreen } from './components/SplashScreen';
 import { HomePage } from './pages/HomePage';
 import { AnalysisPage } from './pages/AnalysisPage';
+import { FundamentalPage } from './pages/FundamentalPage';
 import { PsychologyPage } from './pages/PsychologyPage';
 import { JournalPage } from './pages/JournalPage';
 import { SettingsPage } from './pages/SettingsPage';
+import { CatalogPage } from './pages/CatalogPage';
 import { StorageManager } from './services/api';
 
 export default function App() {
@@ -28,10 +30,14 @@ export default function App() {
         return <HomePage onNavigate={setActiveTab} language={language} />;
       case 'analysis':
         return <AnalysisPage language={language} onNavigate={setActiveTab} />;
+      case 'fundamental':
+        return <FundamentalPage language={language} onNavigate={setActiveTab} />;
       case 'psychology':
         return <PsychologyPage language={language} onNavigate={setActiveTab} />;
       case 'journal':
         return <JournalPage language={language} onNavigate={setActiveTab} />;
+      case 'catalog':
+        return <CatalogPage language={language} onNavigate={setActiveTab} />;
       case 'settings':
         return <SettingsPage language={language} setLanguage={setLanguage} />;
       default:

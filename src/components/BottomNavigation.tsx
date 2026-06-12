@@ -1,4 +1,4 @@
-import { Home, BarChart2, Brain, BookOpen, Settings } from 'lucide-react';
+import { Home, BarChart2, Flame, Brain, BookOpen, Settings, Sparkles } from 'lucide-react';
 
 interface BottomNavigationProps {
   activeTab: string;
@@ -17,6 +17,16 @@ export function BottomNavigation({ activeTab, setActiveTab, language }: BottomNa
       id: 'analysis',
       label: language === 'fa' ? 'تحلیل' : 'Analysis',
       icon: BarChart2,
+    },
+    {
+      id: 'fundamental',
+      label: language === 'fa' ? 'فاندامنتال' : 'Fund',
+      icon: Flame,
+    },
+    {
+      id: 'catalog',
+      label: language === 'fa' ? 'کاتالوگ' : 'Specs',
+      icon: Sparkles,
     },
     {
       id: 'psychology',

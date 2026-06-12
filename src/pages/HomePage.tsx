@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { useGoldPrice } from '../hooks/useGoldPrice';
-import { FundamentalNews } from '../components/FundamentalNews';
 import { Signal, Trade, MarketStats } from '../types';
 import { StorageManager } from '../services/api';
 import { 
@@ -777,8 +776,7 @@ export function HomePage({ onNavigate, language }: HomePageProps) {
 
         </div>
 
-        {/* FUNDAMENTAL CALENDAR & NEWS SECTION */}
-        <FundamentalNews language={language} selectedSymbol={selectedSymbol} />
+
 
       </div>
     </div>

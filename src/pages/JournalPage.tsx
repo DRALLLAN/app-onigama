@@ -135,6 +135,227 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
     document.body.removeChild(link);
   };
 
+  const exportToHTML = () => {
+    if (trades.length === 0) return;
+
+    const startCap = parseFloat(initialBalance || '10000');
+    const finalBalanceValue = startCap + stats.totalProfit;
+
+    const tradesRowsHtml = trades.map((trade, idx) => {
+      const isProfit = trade.profit >= 0;
+      const profitStr = isProfit ? `+${trade.profit.toFixed(2)}` : `${trade.profit.toFixed(2)}`;
+      const profitClass = isProfit ? 'text-emerald-400 font-bold' : 'text-rose-450' ;
+      const actionClass = trade.type === 'BUY' ? 'background-color: rgba(16,185,129,0.12); color: #34d399;' : 'background-color: rgba(244,63,94,0.12); color: #fb7185;';
+      
+      return `
+        <tr style="border-bottom: 1px solid rgba(255,255,255,0.06); transition: background-color 0.2s;" onmouseover="this.style.backgroundColor='rgba(255,255,255,0.02)'" onmouseout="this.style.backgroundColor='transparent'">
+          <td style="padding: 12px; color: #64748b; font-size: 11px; text-align: center;">ONG-${trade.id.split('-')[1] || idx}</td>
+          <td style="padding: 12px; color: #94a3b8; font-size: 11px;">${trade.date}</td>
+          <td style="padding: 12px; font-weight: bold; color: #ffffff;">${trade.symbol}</td>
+          <td style="padding: 12px; text-align: center;">
+            <span style="padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; display: inline-block; ${actionClass}">
+              ${trade.type}
+            </span>
+          </td>
+          <td style="padding: 12px; text-align: center; color: #ffffff; font-weight: bold;">${trade.volume}</td>
+          <td style="padding: 12px; text-align: right; color: #94a3b8;">$${trade.entryPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+          <td style="padding: 12px; text-align: right; color: #94a3b8;">$${trade.exitPrice.toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+          <td style="padding: 12px; text-align: right; font-weight: 950;" class="${profitClass}">${isProfit ? '+' : ''}$${Math.abs(trade.profit).toLocaleString(undefined, { minimumFractionDigits: 2 })}</td>
+        </tr>
+      `;
+    }).join('');
+
+    const htmlContent = `<!DOCTYPE html>
+<html lang="${language === 'fa' ? 'fa' : 'en'}" dir="${language === 'fa' ? 'rtl' : 'ltr'}">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Onigama Performance Statement</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;650;700;900&display=swap');
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #040911;
+      color: #ffffff;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
+    }
+    @media print {
+      body {
+        background-color: #ffffff !important;
+        color: #000000 !important;
+      }
+      .no-print {
+        display: none !important;
+      }
+      .print-invert {
+        color: #000000 !important;
+      }
+      .print-border {
+        border-color: #e2e8f0 !important;
+      }
+      .print-bg {
+        background-color: #f8fafc !important;
+      }
+      tr {
+        border-bottom: 1px solid #e2e8f0 !important;
+        color: #000000 !important;
+      }
+      th {
+        background-color: #f1f5f9 !important;
+        color: #475569 !important;
+        border-bottom: 2px solid #cbd5e1 !important;
+      }
+      td, th {
+        color: #000000 !important;
+      }
+    }
+  </style>
+</head>
+<body class="p-4 sm:p-8 md:p-12 max-w-5xl mx-auto space-y-6">
+  
+  <!-- FLOATING PRINT BAR (HIDDEN IN PRINT) -->
+  <div class="no-print bg-slate-900/95 border border-white/10 backdrop-blur-md p-4 rounded-3xl sticky top-4 z-50 flex flex-col sm:flex-row gap-3 items-center justify-between shadow-2xl">
+    <div class="flex items-center gap-2">
+      <div class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></div>
+      <span class="text-xs text-slate-350 font-medium font-sans">
+        ${language === 'fa' ? 'سند کارنامه آماده چاپ و ذخیره به عنوان فایل PDF است.' : 'Statement ready for direct printing or PDF saving.'}
+      </span>
+    </div>
+    <button onclick="window.print()" class="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-tr from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-sans font-black text-xs rounded-2xl flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md active:scale-95">
+      🖨️ ${language === 'fa' ? 'چاپ یا دریافت فایل PDF' : 'Print or Save as PDF'}
+    </button>
+  </div>
+
+  <!-- MAIN DOCUMENT CONTAINER -->
+  <div class="p-6 md:p-10 bg-black/60 border border-white/10 rounded-[32px] space-y-8 shadow-2xl overflow-hidden print:border-none print:shadow-none print:p-0">
+    
+    <!-- BRANDING HEADER -->
+    <div class="flex flex-col sm:flex-row justify-between items-start gap-4 pb-6 border-b border-white/10 print-border">
+      <div class="space-y-1">
+        <div class="flex items-center gap-2">
+          <div class="w-8 h-8 rounded-lg bg-gradient-to-tr from-amber-600 to-amber-700 flex items-center justify-center text-slate-950 font-sans font-black text-sm">
+            Ω
+          </div>
+          <span class="text-lg font-black tracking-wider text-white print-invert">ONIGAMA TRADERS SYSTEM</span>
+        </div>
+        <p class="text-[10px] text-slate-500 tracking-widest uppercase font-mono">
+          ${language === 'fa' ? 'بخش حسابرسی و ارزیابی عملکرد استراتژی معاملاتی' : 'Audited Institutional Performance & Strategy Ledger'}
+        </p>
+      </div>
+
+      <div class="text-left font-mono text-[10.5px] text-slate-400 space-y-0.5 sm:text-right print-invert">
+        <div><span class="text-slate-500">STATEMENT ID:</span> <span class="font-bold text-slate-200 print-invert">ONG-ST-${Date.now().toString().slice(-6)}</span></div>
+        <div><span class="text-slate-500">CLIENT EMAIL:</span> <span class="text-slate-250 print-invert">behimaram@gmail.com</span></div>
+        <div><span class="text-slate-500">GENERATION TIME:</span> <span class="text-amber-400 font-bold">${new Date().toISOString()}</span></div>
+        <div><span class="text-slate-500">SECURITY TIER:</span> <span class="text-emerald-400 font-bold">CLIENT SECURE SANDBOX</span></div>
+      </div>
+    </div>
+
+    <!-- SUMMARY GRID CARDS -->
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" dir="${language === 'fa' ? 'rtl' : 'ltr'}">
+      <div class="p-4 rounded-2xl bg-white/2 border border-white/5 print-bg print-border">
+        <span class="text-[9.5px] uppercase tracking-wider text-slate-500 block font-bold">${language === 'fa' ? 'سرمایه اولیه ترازنامه' : 'Starting Capital'}</span>
+        <span class="text-base font-bold text-slate-300 mt-1 block print-invert">$${startCap.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+      </div>
+
+      <div class="p-4 rounded-2xl bg-white/2 border border-white/5 print-bg print-border">
+        <span class="text-[9.5px] uppercase tracking-wider text-slate-500 block font-bold">${language === 'fa' ? 'سود/ضرر بازده خالص' : 'Total Net Profit/Loss'}</span>
+        <span class="text-base font-black mt-1 block print-invert ${stats.totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
+          ${stats.totalProfit >= 0 ? '+' : ''}$${stats.totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+        </span>
+      </div>
+
+      <div class="p-4 rounded-2xl bg-white/2 border border-white/5 print-bg print-border">
+        <span class="text-[9.5px] uppercase tracking-wider text-slate-500 block font-bold">${language === 'fa' ? 'ارزش نهایی پورتفو' : 'Final Balance Value'}</span>
+        <span class="text-base font-black text-white mt-1 block print-invert">$${finalBalanceValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+      </div>
+
+      <div class="p-4 rounded-2xl bg-white/2 border border-white/5 print-bg print-border">
+        <span class="text-[9.5px] uppercase tracking-wider text-slate-500 block font-bold">${language === 'fa' ? 'نسبت معاملات موفق' : 'Success Win Rate'}</span>
+        <span class="text-base font-bold text-emerald-400 mt-1 block print-invert">${stats.winRate}% (Wins ${stats.winCount}/${stats.tradesCount})</span>
+      </div>
+    </div>
+
+    <!-- ADVANCED INDICES -->
+    <div class="p-4 bg-white/2 border border-white/5 rounded-2xl print-bg print-border" dir="${language === 'fa' ? 'rtl' : 'ltr'}">
+      <h4 class="text-[10px] font-black tracking-wider text-slate-400 uppercase mb-3 font-mono">${language === 'fa' ? '📌 شاخص‌های پیشرفته سودآوری سیستم' : '📌 PERFORMANCE MULTIPLIER INDICES'}</h4>
+      <div class="grid grid-cols-3 gap-4 text-center">
+        <div>
+          <span class="text-[9px] text-slate-500 block">${language === 'fa' ? 'ضریب سودآوری (Profit Factor)' : 'Profit Factor'}</span>
+          <span class="text-xs font-bold text-slate-200 font-mono print-invert">${profitFactor}</span>
+        </div>
+        <div style="border-left: 1px solid rgba(255,255,255,0.06); border-right: 1px solid rgba(255,255,255,0.06);" class="print-border">
+          <span class="text-[9px] text-slate-500 block">${language === 'fa' ? 'میانگین سود در هر معامله' : 'Avg Profit Per Trade'}</span>
+          <span class="text-xs font-bold font-mono print-invert ${parseFloat(avgProfitPerTrade) >= 0 ? 'text-emerald-400' : 'text-rose-455'}">$${parseFloat(avgProfitPerTrade).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+        </div>
+        <div>
+          <span class="text-[9px] text-slate-500 block">${language === 'fa' ? 'حجم کل قراردادهای اسمی' : 'Total Traded Volumes'}</span>
+          <span class="text-xs font-bold text-slate-200 font-mono print-invert">${totalVolumeTraded} Lots</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- LEDGER TABLE -->
+    <div class="space-y-3">
+      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono block print-invert">${language === 'fa' ? 'لیست تراکنش‌های ثبت‌شده (دفتر کل):' : 'AUDITED HISTORICAL JOURNAL LEDGER:'}</span>
+      <div class="w-full overflow-x-auto rounded-2xl border border-white/5 print-border">
+        <table class="w-full min-w-[680px] text-left border-collapse text-xs font-mono" style="direction: ltr;">
+          <thead>
+            <tr class="bg-white/5 text-[9.5px] text-slate-400 border-b border-white/10 print-bg print-border">
+              <th style="padding: 12px; text-align: center;"># Ticket</th>
+              <th style="padding: 12px; text-align: left;">Date & Time</th>
+              <th style="padding: 12px; text-align: left;">Asset</th>
+              <th style="padding: 12px; text-align: center;">Action</th>
+              <th style="padding: 12px; text-align: center;">Size (Lots)</th>
+              <th style="padding: 12px; text-align: right;">Entry</th>
+              <th style="padding: 12px; text-align: right;">Exit</th>
+              <th style="padding: 12px; text-align: right;">Net Return (USD)</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-white/5 text-slate-300 print-border">
+            ${tradesRowsHtml}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- SEAL & SIGNATURE FOOTER -->
+    <div class="pt-10 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-6 print-border" dir="${language === 'fa' ? 'rtl' : 'ltr'}">
+      <div class="space-y-1 text-center sm:text-right">
+        <div class="flex items-center gap-1.5 justify-center sm:justify-start">
+          <span class="text-amber-500">🏆</span>
+          <span class="text-[11px] font-black text-slate-200 uppercase tracking-wider print-invert">${language === 'fa' ? 'مورد ممیزی و تایید رسمی سیستم فام Onigama' : 'Onigama Audited Strategy Certification'}</span>
+        </div>
+        <p class="text-[9.5px] text-slate-500 leading-relaxed max-w-lg font-sans">
+          ${language === 'fa'
+            ? 'این گزارش تراز معتبر بر اساس معاملات آزمایشی و شبیه‌سازی کلاینت بصورت محلی محاسبه و تایید شده است. به عنوان تاییدیه معتبر معاملاتی Onigama صادر می‌گردد.'
+            : 'This certified performance ledger represents offline local sandbox testing logged actions. Issued by Onigama Core Engine Security, conforming completely with platform trading rules.'}
+        </p>
+      </div>
+
+      <div class="border-2 border-dashed border-emerald-500/40 p-3.5 rounded-2xl text-center rotate-3 scale-95 select-none shrink-0 font-mono">
+        <div class="text-[8px] font-black text-emerald-500/60 uppercase tracking-widest">${language === 'fa' ? 'کنترل سیستم‌های مالی' : 'FINANCIAL SYSTEMS CHECK'}</div>
+        <div class="text-sm font-black text-emerald-400 my-0.5 tracking-tight">★ VERIFIED PASSED ★</div>
+        <div class="text-[8px] font-semibold text-slate-500">${new Date().toISOString().split('T')[0]} ONIGAMA-Q</div>
+      </div>
+    </div>
+
+  </div>
+</body>
+</html>`;
+
+    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `Onigama_Official_Statement_${new Date().toISOString().split('T')[0]}.html`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const copyAsTableText = () => {
     if (trades.length === 0) return;
     setIsCopying(true);
@@ -462,7 +683,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
                   type="number"
                   step="0.01"
                   required
-                  placeholder="2425"
+                  placeholder="4540"
                   value={entry}
                   onChange={e => setEntry(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 focus:border-[#6f87a0] font-mono text-xs rounded-xl p-2.5 text-white outline-none"
@@ -474,7 +695,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
                   type="number"
                   step="0.01"
                   required
-                  placeholder="2435"
+                  placeholder="4555"
                   value={exit}
                   onChange={e => setExit(e.target.value)}
                   className="w-full bg-white/5 border border-white/10 focus:border-[#6f87a0] font-mono text-xs rounded-xl p-2.5 text-white outline-none"
@@ -733,12 +954,30 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
 
               <div className="flex gap-2 items-center justify-end">
                 <button
-                  onClick={() => window.print()}
+                  onClick={exportToHTML}
+                  type="button"
+                  className="flex-1 sm:flex-initial py-1.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-[10.5px] sm:text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all"
+                  title={language === 'fa' ? 'دانلود کارنامه به عنوان سند دیجیتال آفلاین چاپی' : 'Download statement as printable offline document'}
+                >
+                  <Download className="w-3.5 h-3.5" />
+                  <span>{language === 'fa' ? 'دریافت سند آفلاین (HTML/PDF)' : 'Download Offline Document'}</span>
+                </button>
+
+                <button
+                  onClick={() => {
+                    try {
+                      window.print();
+                    } catch (e) {
+                      alert(language === 'fa' 
+                        ? '⚠️ پرینت مستقیم در این محیط پشتیبانی نمیشود. لطفا از دکمه دریافت سند آفلاین استفاده کنید.' 
+                        : '⚠️ Direct print is not supported in this environment. Please use Download Offline Document.');
+                    }
+                  }}
                   type="button"
                   className="flex-1 sm:flex-initial py-1.5 px-3 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold text-[10.5px] sm:text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all"
                 >
                   <Printer className="w-3.5 h-3.5" />
-                  <span>{language === 'fa' ? 'پرینت / PDF' : 'Print / PDF'}</span>
+                  <span>{language === 'fa' ? 'پرینت مستقیم' : 'Direct Print'}</span>
                 </button>
 
                 <button

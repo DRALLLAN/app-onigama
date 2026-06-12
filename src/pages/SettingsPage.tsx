@@ -1,4 +1,4 @@
-import { useState, useEffect, FormEvent } from 'react';
+import { useState, useEffect, FormEvent, MouseEvent } from 'react';
 import { UserSettings, UserProfile } from '../types';
 import { StorageManager } from '../services/api';
 import { PlayBillingService, PLAY_STORE_PRODUCTS, PurchaseState } from '../services/billing';
@@ -23,7 +23,8 @@ import {
   ShieldCheck,
   CreditCard,
   Lock,
-  ShoppingBag
+  ShoppingBag,
+  Download
 } from 'lucide-react';
 
 interface SettingsPageProps {
@@ -50,6 +51,30 @@ export function SettingsPage({ language, setLanguage }: SettingsPageProps) {
     isActivated: false
   });
 
+  // Dynamic Subscription Builder & Monetization Panel state
+  const [customSubscriptions, setCustomSubscriptions] = useState<any[]>(() => {
+    try {
+      const saved = localStorage.getItem('onigama_custom_subs');
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const [isCreatingSub, setIsCreatingSub] = useState(false);
+  const [newSub, setNewSub] = useState({
+    name: '',
+    type: 'auto_renew', // auto_renew, prepaid, consumable
+    period: 'month', // week, month, half_year, year, lifetime
+    price: '4.99',
+    hasOffer: false,
+    offerPrice: '2.49',
+    offerType: 'trial', // trial (acquire), upgrade (encourage upgrade)
+    topupValue: '30' // prepaid recharge amount in days
+  });
+
+  const [activeCustomProductId, setActiveCustomProductId] = useState<string | null>(null);
+
   const [showSaveSuccess, setShowSaveSuccess] = useState(false);
   const [showProfileSuccess, setShowProfileSuccess] = useState(false);
   const [activationError, setActivationError] = useState<string | null>(null);
@@ -69,6 +94,53 @@ export function SettingsPage({ language, setLanguage }: SettingsPageProps) {
   const [pingMs, setPingMs] = useState<number>(42);
   const [devModeActive, setDevModeActive] = useState(false);
   const [devClickCount, setDevClickCount] = useState(0);
+
+  // PWA Install State & Utilities
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+  const [isPWAInstalled, setIsPWAInstalled] = useState<boolean>(false);
+  const [pwaPlatform, setPwaPlatform] = useState<'ios' | 'android' | 'desktop'>('android');
+
+  useEffect(() => {
+    // Check display-mode to see if we are already inside the PWA shell
+    if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
+      setIsPWAInstalled(true);
+    }
+
+    // Detect platform
+    const ua = navigator.userAgent.toLowerCase();
+    if (/iphone|ipad|ipod/.test(ua)) {
+      setPwaPlatform('ios');
+    } else if (/android/.test(ua)) {
+      setPwaPlatform('android');
+    } else {
+      setPwaPlatform('desktop');
+    }
+
+    // Check pre-registered prompt
+    const checkPrompt = () => {
+      if ((window as any).deferredPrompt) {
+        setDeferredPrompt((window as any).deferredPrompt);
+      }
+    };
+
+    checkPrompt();
+    window.addEventListener('onigamapwaprompt', checkPrompt);
+    return () => {
+      window.removeEventListener('onigamapwaprompt', checkPrompt);
+    };
+  }, []);
+
+  const handleInstallPWA = async () => {
+    const promptEvent = deferredPrompt || (window as any).deferredPrompt;
+    if (!promptEvent) return;
+    promptEvent.prompt();
+    const { outcome } = await promptEvent.userChoice;
+    if (outcome === 'accepted') {
+      setIsPWAInstalled(true);
+      setDeferredPrompt(null);
+      (window as any).deferredPrompt = null;
+    }
+  };
 
   useEffect(() => {
     const loaded = StorageManager.getSettings();
@@ -293,6 +365,102 @@ export function SettingsPage({ language, setLanguage }: SettingsPageProps) {
     setProfile(updated);
     StorageManager.saveProfile(updated);
     playLocalBeep(600, 0.2);
+  };
+
+  const handleCreateSubscription = (e: FormEvent) => {
+    e.preventDefault();
+    if (!newSub.name.trim()) return;
+
+    const subId = 'sub_' + Math.floor(Math.random() * 100000);
+    const subObj = {
+      ...newSub,
+      id: subId,
+      createdAt: new Date().toISOString()
+    };
+
+    const nextSubs = [subObj, ...customSubscriptions];
+    setCustomSubscriptions(nextSubs);
+    localStorage.setItem('onigama_custom_subs', JSON.stringify(nextSubs));
+
+    // Reset standard state form
+    setNewSub({
+      name: '',
+      type: 'auto_renew',
+      period: 'month',
+      price: '4.99',
+      hasOffer: false,
+      offerPrice: '2.49',
+      offerType: 'trial',
+      topupValue: '30'
+    });
+    setIsCreatingSub(false);
+    playVictoryCascade();
+  };
+
+  const handleDeleteSubscription = (id: string, e: MouseEvent) => {
+    e.stopPropagation();
+    const nextSubs = customSubscriptions.filter(s => s.id !== id);
+    setCustomSubscriptions(nextSubs);
+    localStorage.setItem('onigama_custom_subs', JSON.stringify(nextSubs));
+    playLocalBeep(700, 0.15);
+  };
+
+  const handleInitiateCustomPurchase = (sub: any) => {
+    setSelectedProductId('custom_' + sub.id);
+    setActiveCustomProductId(sub.id);
+    
+    setPurchaseState({
+      isProcessing: true,
+      statusText: language === 'fa' ? 'در حال برقراری اتصال با درگاه توزیع اشتراک...' : 'Connecting to secure app-monetization servers...',
+      error: null,
+      success: false
+    });
+    setShowPlayStoreModal(true);
+
+    let progressIdx = 0;
+    const steps = [
+      { t: 400, s: language === 'fa' ? 'تماس با سرورهای پردازش خرید گوگل‌پلی...' : 'Contacting play.google.com backend nodes...' },
+      { t: 900, s: language === 'fa' ? 'اعتبارسنجی پکیج اشتراک سفارشی و متد تمدید...' : 'Validating custom subscription tier & renewal frequency...' },
+      { t: 1400, s: language === 'fa' ? 'صدور توکن تراکنش و همگام‌سازی لایحه مالی...' : 'Acquiring token signature and secure payment approval...' },
+      { t: 1900, s: language === 'fa' ? 'اعمال دسترسی طلایی و تأیید هویت کاربری...' : 'Encrypting transaction receipts & verifying license state...' }
+    ];
+
+    const runSim = () => {
+      if (progressIdx < steps.length) {
+        const step = steps[progressIdx];
+        setTimeout(() => {
+          setPurchaseState(prev => ({
+            ...prev,
+            statusText: step.s
+          }));
+          progressIdx++;
+          runSim();
+        }, step.t);
+      } else {
+        const updated: UserProfile = {
+          ...profile,
+          isActivated: true,
+          subscriptionTier: 'vip',
+          activationKey: 'CUSTOM_' + sub.name.toUpperCase().replace(/[^A-Z0-9]/g, '_')
+        };
+        setProfile(updated);
+        StorageManager.saveProfile(updated);
+        
+        setPurchaseState({
+          isProcessing: false,
+          statusText: 'entitlement verified successfully',
+          error: null,
+          success: true
+        });
+
+        playVictoryCascade();
+        setActivationError(null);
+        setActivationSuccess(true);
+        setTimeout(() => setActivationSuccess(false), 3000);
+      }
+    };
+
+    runSim();
   };
 
   const handleInitiatePlayStorePurchase = (productId: string) => {
@@ -881,6 +1049,412 @@ export function SettingsPage({ language, setLanguage }: SettingsPageProps) {
             </div>
           </div>
 
+          {/* SUBSCRIPTION CREATOR & STRATEGY PANEL (MONETIZATION HUB) */}
+          <div className="p-6 rounded-3xl bg-gradient-to-tr from-slate-900 via-[#0d141e] to-[#0a1b24] border border-blue-500/10 space-y-4">
+            <div className="flex justify-between items-start border-b border-white/5 pb-3">
+              <h2 className="text-xs font-bold text-blue-400 tracking-wider uppercase flex items-center gap-1.5">
+                <Sparkles className="w-4 h-4 text-blue-450 shrink-0" />
+                <span>{language === 'fa' ? 'کنسول مدیریت و توسعه اشتراک‌ها' : 'Subscription & Strategy Console'}</span>
+              </h2>
+              <span className="text-[8.5px] font-mono text-emerald-400 px-2 py-0.5 rounded-md bg-emerald-500/10 border border-emerald-500/20 uppercase tracking-widest">
+                STORE ENGINE V2
+              </span>
+            </div>
+
+            {/* Empty State vs Form vs List */}
+            {customSubscriptions.length === 0 && !isCreatingSub ? (
+              <div className="py-6 text-center space-y-4">
+                <div className="w-12 h-12 rounded-full bg-blue-500/5 border border-blue-500/20 flex items-center justify-center mx-auto text-blue-400">
+                  <CreditCard className="w-6 h-6 animate-pulse" />
+                </div>
+                
+                <div className="space-y-1.5 max-w-sm mx-auto">
+                  <p className="text-xs font-semibold text-slate-100">
+                    Your app doesn't have any subscriptions yet
+                  </p>
+                  <p className="text-[10.5px] text-slate-400 leading-relaxed font-sans">
+                    Create subscriptions and sell them in different ways. Configure auto-renewing subscriptions, prepaid plans with top-ups, and various periods. Add offers to help acquire new subscribers or encourage existing subscribers to upgrade.
+                  </p>
+                  {language === 'fa' && (
+                    <p className="text-[10px] text-slate-400 leading-relaxed pt-1.5 border-t border-white/5 font-sans mt-2">
+                      برنامه شما هنوز هیچ اشتراکی ندارد! همین حالا گزینه‌های تمدید خودکار، طرح‌های پیش‌پرداخت، بازه‌های متنوع و تخفیفات تبلیغاتی (Offers) گوناگون را برای ترغیب تریدرها پیکربندی و ایجاد نمایید.
+                    </p>
+                  )}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setIsCreatingSub(true)}
+                  className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-650 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-md cursor-pointer transition-all active:scale-95 flex items-center gap-2 mx-auto"
+                >
+                  <span>{language === 'fa' ? '➕ پیکربندی اولین اشتراک' : '➕ Create Subscription Plan'}</span>
+                </button>
+              </div>
+            ) : null}
+
+            {/* In Create State */}
+            {isCreatingSub && (
+              <form onSubmit={handleCreateSubscription} className="space-y-4 text-xs">
+                <div className="flex justify-between items-center bg-white/2 p-2 rounded-xl text-slate-300">
+                  <span className="font-bold">{language === 'fa' ? 'ایجاد طرح اشتراک جدید' : 'Configure Premium Offer'}</span>
+                  <button 
+                    type="button" 
+                    onClick={() => setIsCreatingSub(false)}
+                    className="text-[10px] text-slate-500 hover:text-white"
+                  >
+                    {language === 'fa' ? 'انصراف' : 'Cancel'}
+                  </button>
+                </div>
+
+                {/* Sub Name */}
+                <div className="space-y-1">
+                  <label className="text-[10.5px] font-semibold text-slate-400 block pb-1">
+                    {language === 'fa' ? 'نام طرح اشتراک' : 'Subscription Name'}
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={newSub.name}
+                    onChange={(e) => setNewSub({ ...newSub, name: e.target.value })}
+                    placeholder={language === 'fa' ? 'مثال: اشتراک طلایی الیت' : 'e.g., Golden Elite Analytics'}
+                    className={`w-full bg-slate-950/60 border border-white/5 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-blue-500/50 text-xs font-sans placeholder-slate-600`}
+                  />
+                </div>
+
+                {/* Grid sub properties */}
+                <div className="grid grid-cols-2 gap-3">
+                  {/* Type */}
+                  <div className="space-y-1">
+                    <label className="text-[10.5px] font-semibold text-slate-400 block pb-1">
+                      {language === 'fa' ? 'نوع مکانیزم تراکنش' : 'Monetization Style'}
+                    </label>
+                    <select
+                      value={newSub.type}
+                      onChange={(e) => setNewSub({ ...newSub, type: e.target.value })}
+                      className="w-full bg-slate-950/60 border border-white/5 rounded-xl py-2 px-2.5 text-white focus:outline-none focus:border-blue-500/10 text-xs cursor-pointer"
+                    >
+                      <option value="auto_renew">{language === 'fa' ? 'تمدید خودکار (Auto-Renew)' : 'Auto-Renewing Sub'}</option>
+                      <option value="prepaid">{language === 'fa' ? 'پیش‌پرداخت (Prepaid Plan)' : 'Prepaid with Top-up'}</option>
+                      <option value="consumable">{language === 'fa' ? 'اعتبار مصرفی / ارتقا' : 'One-time upgrade offer'}</option>
+                    </select>
+                  </div>
+
+                  {/* Period */}
+                  <div className="space-y-1">
+                    <label className="text-[10.5px] font-semibold text-slate-400 block pb-1">
+                      {language === 'fa' ? 'دوره دسترسی' : 'Access Period'}
+                    </label>
+                    <select
+                      value={newSub.period}
+                      disabled={newSub.type === 'consumable'}
+                      onChange={(e) => setNewSub({ ...newSub, period: e.target.value })}
+                      className="w-full bg-slate-950/60 border border-white/5 rounded-xl py-2 px-2.5 text-white focus:outline-none focus:border-blue-500/10 text-xs cursor-pointer disabled:opacity-50"
+                    >
+                      <option value="week">{language === 'fa' ? 'هفتگی (1 Week)' : 'Weekly'}</option>
+                      <option value="month">{language === 'fa' ? 'ماهانه (1 Month)' : 'Monthly'}</option>
+                      <option value="half_year">{language === 'fa' ? '۶ ماهه (6 Months)' : 'Semiannually'}</option>
+                      <option value="year">{language === 'fa' ? 'سالانه (1 Year)' : 'Annual'}</option>
+                      <option value="lifetime">{language === 'fa' ? 'مادام‌العمر (Lifetime)' : 'Lifetime Pack'}</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Conditional Prepaid view details */}
+                {newSub.type === 'prepaid' && (
+                  <div className="p-3 bg-blue-500/5 border border-blue-500/10 rounded-2xl space-y-1 text-[10.5px] text-slate-300">
+                    <div className="flex justify-between items-center font-sans">
+                      <span>{language === 'fa' ? 'شارژ پیش‌فرض دوره فعال (Top-Up):' : 'Prepaid activation quota:'}</span>
+                      <span className="font-bold font-mono text-blue-400">{newSub.topupValue} Days</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="7"
+                      max="180"
+                      step="7"
+                      value={newSub.topupValue}
+                      onChange={(e) => setNewSub({ ...newSub, topupValue: e.target.value })}
+                      className="w-full tracking-wide accent-blue-500 cursor-pointer"
+                    />
+                    <p className="text-[9.5px] text-slate-500 block leading-normal pt-1 flex items-center gap-1">
+                      <Info className="w-3.5 h-3.5 shrink-0" />
+                      <span>{language === 'fa' ? 'تریدرها می‌توانند با خرید شارژ مجدد، روزهای بیشتری به اعتبار حساب خود اضافه فرمایند.' : 'Prepaid billing allows buying sequential top-ups to accumulate access duration.'}</span>
+                    </p>
+                  </div>
+                )}
+
+                {/* Base Price */}
+                <div className="grid grid-cols-2 gap-3 items-center">
+                  <div className="space-y-1">
+                    <label className="text-[10.5px] font-semibold text-slate-400 block pb-1">
+                      {language === 'fa' ? 'قیمت پایه (USD)' : 'Base Price (USD)'}
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      min="0.99"
+                      max="199.99"
+                      step="0.01"
+                      value={newSub.price}
+                      onChange={(e) => setNewSub({ ...newSub, price: e.target.value })}
+                      className="w-full bg-slate-950/60 border border-white/5 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-blue-500/50 text-xs font-mono"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2 pt-6">
+                    <label className="relative flex items-center gap-2 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={newSub.hasOffer}
+                        onChange={(e) => setNewSub({ ...newSub, hasOffer: e.target.checked })}
+                        className="rounded bg-slate-950 border-white/10 text-blue-500 focus:ring-0 focus:ring-offset-0 cursor-pointer w-4 h-4"
+                      />
+                      <span className="text-[11px] font-bold text-slate-300">{language === 'fa' ? 'افزودن تخفیف/آفر جذب' : 'Add Special Offer'}</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* Conditional Offer detail block */}
+                {newSub.hasOffer && (
+                  <div className="p-3.5 bg-amber-500/5 border border-amber-500/10 rounded-2xl space-y-3">
+                    <div className="grid grid-cols-2 gap-3 text-[11px]">
+                      <div className="space-y-1">
+                        <span className="text-slate-400 block">{language === 'fa' ? 'نوع تخفیف استراتژی' : 'Campaign Goal'}</span>
+                        <select
+                          value={newSub.offerType}
+                          onChange={(e) => setNewSub({ ...newSub, offerType: e.target.value })}
+                          className="w-full bg-slate-950/80 border border-white/5 rounded-lg py-1 px-1.5 text-slate-200 focus:outline-none focus:border-amber-500/10 text-[10.5px] cursor-pointer"
+                        >
+                          <option value="trial">{language === 'fa' ? 'اشتراک تست ارزان (New user)' : 'New User Trial'}</option>
+                          <option value="upgrade">{language === 'fa' ? 'مشوق ارتقا (Loyalty Upgrade)' : 'Upgrade Promotion'}</option>
+                        </select>
+                      </div>
+
+                      <div className="space-y-1">
+                        <span className="text-slate-400 block">{language === 'fa' ? 'قیمت آفر ویژه (USD)' : 'Offer Price (USD)'}</span>
+                        <input
+                          type="number"
+                          required
+                          min="0.49"
+                          max="99.99"
+                          step="0.01"
+                          value={newSub.offerPrice}
+                          onChange={(e) => setNewSub({ ...newSub, offerPrice: e.target.value })}
+                          className="w-full bg-slate-950/80 border border-white/5 rounded-lg py-1 px-1.5 text-white focus:outline-none focus:border-amber-500/50 text-[10px] font-mono"
+                        />
+                      </div>
+                    </div>
+                    <p className="text-[9px] text-amber-300 leading-relaxed font-sans">
+                      {newSub.offerType === 'trial' 
+                        ? (language === 'fa' ? '★ بازاریابی جذب: این آفر به کاربران اجازه می‌دهد دوره اول دسترسی را با تخفیف شروع کنند.' : '★ Acquisition Campaign: Grants newcomers a reduced first-period subscription trial to maximize checkout rates.')
+                        : (language === 'fa' ? '★ بازاریابی ارتقا: مشوق تریدرهای قدیمی برای مهاجرت به پلن VIP اونیگاما.' : '★ Upgrade Loyalty Bundle: Specifically targets active catalog users with exclusive upgrade bundles.')}
+                    </p>
+                  </div>
+                )}
+
+                {/* Form CTR Actions */}
+                <div className="flex gap-2 justify-end pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatingSub(false)}
+                    className="py-2 px-3.5 bg-slate-950 border border-white/5 rounded-xl block font-bold cursor-pointer text-[10.5px] text-slate-400 hover:text-white transition-all"
+                  >
+                    {language === 'fa' ? 'بازگشت' : 'Cancel'}
+                  </button>
+                  <button
+                    type="submit"
+                    className="py-2 px-5 bg-blue-600 hover:bg-blue-500 text-white border border-blue-500/20 font-black rounded-xl block cursor-pointer text-[11px] uppercase tracking-wider transition-all"
+                  >
+                    {language === 'fa' ? 'حفظ و انتشار' : 'Publish Plan'}
+                  </button>
+                </div>
+              </form>
+            )}
+
+            {/* List Created Custom Subscription Plans */}
+            {customSubscriptions.length > 0 && !isCreatingSub && (
+              <div className="space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-[10px] text-slate-450 font-bold uppercase tracking-wider font-sans">
+                    {language === 'fa' ? `پلن‌های اشتراک فعال گوگل‌پلی (${customSubscriptions.length})` : `Custom App Store Subscriptions (${customSubscriptions.length})`}
+                  </span>
+                  
+                  <button
+                    type="button"
+                    onClick={() => setIsCreatingSub(true)}
+                    className="text-[10px] font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 cursor-pointer"
+                  >
+                    <span>{language === 'fa' ? '➕ پکیج جدید' : '➕ Create New'}</span>
+                  </button>
+                </div>
+
+                <div className="grid grid-cols-1 gap-2 text-xs">
+                  {customSubscriptions.map((sub) => {
+                    const typeLabel = sub.type === 'auto_renew' ? (language === 'fa' ? 'تمدید دوره‌ای' : 'Auto-Renew') : sub.type === 'prepaid' ? (language === 'fa' ? 'اعتباری (Prepaid)' : 'Prepaid') : (language === 'fa' ? 'کپن ارتقا' : 'Promo Bundle');
+                    const periodLabel = sub.period === 'week' ? (language === 'fa' ? '۱ هفته' : 'Weekly') : sub.period === 'month' ? (language === 'fa' ? '۱ ماهه' : 'Monthly') : sub.period === 'half_year' ? (language === 'fa' ? '۶ ماهه' : 'Semiannually') : sub.period === 'year' ? (language === 'fa' ? 'سالانه' : 'Annual') : (language === 'fa' ? 'مادام‌العمر' : 'Lifetime');
+                    
+                    return (
+                      <div 
+                        key={sub.id}
+                        className="p-3 bg-slate-950/60 hover:bg-slate-950 rounded-2xl border border-white/5 flex items-center justify-between gap-3 group transition-all text-right"
+                      >
+                        <div className="space-y-1 min-w-0 flex-1">
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <span className="font-extrabold text-white truncate text-[11.5px]">{sub.name}</span>
+                            <span className="px-1.5 py-0.5 rounded bg-blue-500/10 border border-blue-500/15 text-[8.5px] text-blue-400 font-mono scale-95 origin-left uppercase">
+                              {typeLabel}
+                            </span>
+                            {sub.hasOffer && (
+                              <span className="px-1.5 py-0.5 rounded bg-amber-500/10 border border-amber-500/15 text-[8.5px] text-amber-400 font-mono scale-95 origin-left uppercase">
+                                OFFER ACTIVE
+                              </span>
+                            )}
+                          </div>
+                          
+                          <div className="flex items-center gap-3 text-[9.5px] text-slate-400 flex-wrap">
+                            <span>
+                              {language === 'fa' ? `دوره: ${periodLabel}` : `Period: ${periodLabel}`}
+                            </span>
+                            {sub.type === 'prepaid' && (
+                              <span>
+                                {language === 'fa' ? `شارژ اعتبار: ${sub.topupValue} روز` : `Top-up: ${sub.topupValue} days`}
+                              </span>
+                            )}
+                            <div className="flex items-center gap-1 font-mono text-white text-[11px]">
+                              {sub.hasOffer ? (
+                                <>
+                                  <span className="line-through text-slate-500 text-[9.5px]">${sub.price}</span>
+                                  <span className="text-amber-400 font-bold">${sub.offerPrice}</span>
+                                </>
+                              ) : (
+                                <span className="font-bold text-slate-300">${sub.price}</span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Simulate Checkout action */}
+                        <div className="flex items-center gap-1.5 shrink-0" dir="ltr">
+                          <button
+                            type="button"
+                            onClick={() => handleInitiateCustomPurchase(sub)}
+                            className="px-2.5 py-1.5 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 hover:from-blue-600/30 hover:to-indigo-650/30 text-blue-300 hover:text-white border border-blue-500/20 rounded-xl text-[10px] font-bold cursor-pointer transition-all active:scale-95 flex items-center gap-1"
+                            title={language === 'fa' ? 'شبیه‌سازی فرآیند خرید' : 'Simulate Purchase'}
+                          >
+                            <span>{language === 'fa' ? 'تست خرید' : 'Test Buy'}</span>
+                          </button>
+                          
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteSubscription(sub.id, e)}
+                            className="p-1.5 bg-[#1a0e10] hover:bg-red-500/15 text-red-400 rounded-xl transition-all cursor-pointer"
+                            title={language === 'fa' ? 'حذف طرح' : 'Delete'}
+                          >
+                            <span className="text-xs">✕</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* PWA WEB APP NATIVE INSTALLATION CARD */}
+          <div className="p-6 rounded-3xl glass-card glow-gold border border-amber-500/10 space-y-4">
+            <h2 className="text-xs font-bold text-slate-300 tracking-wider uppercase flex items-center gap-1.5 border-b border-white/5 pb-3">
+              <Download className="w-4 h-4 text-amber-400 shrink-0" />
+              <span>{language === 'fa' ? 'نصب نسخه وب اپلیکیشن اونیگاما (PWA)' : 'Install Onigama Web App (PWA)'}</span>
+            </h2>
+            
+            <div className="space-y-3">
+              <div className="p-4 bg-slate-950/45 rounded-2xl border border-white/5 flex flex-col sm:flex-row items-center gap-4">
+                <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500 to-yellow-600 flex items-center justify-center text-white shrink-0 shadow-lg">
+                  <Download className="w-6 h-6 text-slate-950 stroke-[2.5]" />
+                </div>
+                <div className="space-y-1 text-center sm:text-right min-w-0 flex-1">
+                  <span className="text-xs font-black text-slate-100 block">
+                    {language === 'fa' ? 'وب اپلیکیشن اندروید، iOS و دسکتاپ' : 'Universal Progressive Web App (PWA)'}
+                  </span>
+                  <span className="text-[10px] text-slate-400 block font-sans">
+                    {language === 'fa' 
+                      ? 'با نصب وب اپلیکیشن، دسترسی مستقیم آیکون برنامه همانند یک نرم‌افزار نیتیو روی صفحه گوشی شما قرار می‌گیرد.' 
+                      : 'Add to home screen for real-time market updates, premium signals, and native layout performance.'}
+                  </span>
+                </div>
+              </div>
+
+              {isPWAInstalled ? (
+                <div className="p-3 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 rounded-2xl text-center text-xs font-bold font-sans flex items-center justify-center gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                  <span>
+                    {language === 'fa' 
+                      ? 'اکنون شما در حال استفاده از نسخه وب‌اپلیکیشن (PWA) اونیگاما هستید!' 
+                      : 'You are running the official Onigama PWA client! Fully optimized and offline-ready.'}
+                  </span>
+                </div>
+              ) : (
+                <div className="space-y-3">
+                  {/* Action button or OS Instructions */}
+                  {deferredPrompt ? (
+                    <button
+                      type="button"
+                      onClick={handleInstallPWA}
+                      className="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg active:scale-95 text-center flex items-center justify-center gap-2"
+                    >
+                      <Download className="w-4 h-4 text-slate-950" />
+                      <span>{language === 'fa' ? 'نصب مستقیم وب اپلیکیشن اونیگاما' : 'Install Onigama Web App'}</span>
+                    </button>
+                  ) : (
+                    <div className="p-3.5 bg-slate-950/60 rounded-2xl border border-white/5 space-y-2.5">
+                      <span className="text-[10.5px] font-bold text-slate-300 block">
+                        {language === 'fa' ? 'ℹ️ راهنمای سریع راه‌اندازی و نصب:' : 'ℹ️ Platform Setup Guideline:'}
+                      </span>
+                      
+                      {pwaPlatform === 'ios' ? (
+                        <div className="text-[10px] text-slate-400 leading-relaxed space-y-1 font-sans">
+                          <p>
+                            {language === 'fa' 
+                              ? '١. در پایین صفحه آیفون خود دکمه اشتراک گذاری (Share 🔗) را انتخاب کنید.' 
+                              : '1. Tap the Share button (🔗) in your Safari app toolbar at the bottom.'}
+                          </p>
+                          <p>
+                            {language === 'fa' 
+                              ? '٢. به سمت پایین اسکرول کنید و گزینه "Add to Home Screen" را کلیک فرمایید.' 
+                              : '2. Scroll down and touch "Add to Home Screen" option.'}
+                          </p>
+                          <p>
+                            {language === 'fa' 
+                              ? '٣. در بالای صفحه دکمه "Add" را بزنید تا برنامه روی آیفون نصب شود.' 
+                              : '3. Press "Add" in the top corner to complete native PWA installation.'}
+                          </p>
+                        </div>
+                      ) : (
+                        <div className="text-[10px] text-slate-400 leading-relaxed space-y-1 font-sans">
+                          <p>
+                            {language === 'fa' 
+                              ? '١. منوی سه‌نقطه مرورگر کروم یا فایرفاکس خود را در بالا سمت راست لمس فرمایید.' 
+                              : '1. Open the browser menu (three dots in Chrome header/sidebar).'}
+                          </p>
+                          <p>
+                            {language === 'fa' 
+                              ? '٢. گزینه "Install application" یا "Add to Home Screen" را انتخاب کنید.' 
+                              : '2. Select "Install app" or "Add to Home screen" to initialize download.'}
+                          </p>
+                          <p>
+                            {language === 'fa' 
+                              ? '٣. تصمیم خود را تایید کرده تا آیکون میانبر به برنامه‌هایتان اضافه شود.' 
+                              : '3. Tap Install or Add to create the launcher icon on your screen.'}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+
           {/* PLATFORM METADATA SPECIFICATIONS */}
           <div className="p-6 rounded-3xl glass-card border border-white/5 space-y-4">
             <h2 className="text-xs font-bold text-slate-300 tracking-wider uppercase flex items-center gap-1.5 border-b border-white/5 pb-3">
@@ -1020,13 +1594,23 @@ export function SettingsPage({ language, setLanguage }: SettingsPageProps) {
             {/* Content Field */}
             <div className="p-5 space-y-4">
               <div className="flex gap-3 bg-white/2 p-3 rounded-2xl border border-white/5">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-amber-500 to-yellow-600 flex items-center justify-center text-slate-950 font-black text-xs shrink-0 font-sans shadow-inner">
-                  🔑
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-500 to-indigo-600 flex items-center justify-center text-white font-black text-xs shrink-0 font-sans shadow-inner">
+                  💎
                 </div>
                 <div className="space-y-0.5 min-w-0 flex-1">
                   <span className="text-xs font-bold text-slate-200 block truncate">Onigama FX Intelligence</span>
                   <span className="text-[10px] text-[#8e8e93] block truncate">
-                    {selectedProductId === PLAY_STORE_PRODUCTS.VIP_LIFETIME 
+                    {selectedProductId.startsWith('custom_') ? (
+                      (() => {
+                        const subId = selectedProductId.replace('custom_', '');
+                        const foundSub = customSubscriptions.find(s => s.id === subId);
+                        if (foundSub) {
+                          const typeLabel = foundSub.type === 'auto_renew' ? 'Auto-Renew' : foundSub.type === 'prepaid' ? 'Prepaid Plan' : 'Campaign Offer';
+                          return `${foundSub.name} (${typeLabel})`;
+                        }
+                        return 'Custom Active Package';
+                      })()
+                    ) : selectedProductId === PLAY_STORE_PRODUCTS.VIP_LIFETIME 
                       ? 'VIP Crown - Lifetime Access Package'
                       : 'PRO Analytics Sub - 12 Months Recurrent'}
                   </span>
@@ -1037,7 +1621,16 @@ export function SettingsPage({ language, setLanguage }: SettingsPageProps) {
               <div className="flex justify-between items-baseline py-1">
                 <span className="text-[11px] text-slate-400 font-sans">{language === 'fa' ? 'قیمت اشتراک تکی:' : 'Subscription Price:'}</span>
                 <span className="text-lg font-black font-mono text-white">
-                  {selectedProductId === PLAY_STORE_PRODUCTS.VIP_LIFETIME ? '$12.99' : '$4.99'}
+                  {selectedProductId.startsWith('custom_') ? (
+                    (() => {
+                      const subId = selectedProductId.replace('custom_', '');
+                      const foundSub = customSubscriptions.find(s => s.id === subId);
+                      if (foundSub) {
+                        return `$${foundSub.hasOffer ? foundSub.offerPrice : foundSub.price}`;
+                      }
+                      return '$5.99';
+                    })()
+                  ) : selectedProductId === PLAY_STORE_PRODUCTS.VIP_LIFETIME ? '$12.99' : '$4.99'}
                 </span>
               </div>
 
@@ -1090,10 +1683,19 @@ export function SettingsPage({ language, setLanguage }: SettingsPageProps) {
                   {/* Purchase CTA */}
                   <button
                     onClick={() => {
-                      // Trigger payment cycle simulation
-                      handleInitiatePlayStorePurchase(selectedProductId);
+                      if (selectedProductId.startsWith('custom_')) {
+                        const subId = selectedProductId.replace('custom_', '');
+                        const foundSub = customSubscriptions.find(s => s.id === subId);
+                        if (foundSub) {
+                          handleInitiateCustomPurchase(foundSub);
+                        } else {
+                          setShowPlayStoreModal(false);
+                        }
+                      } else {
+                        handleInitiatePlayStorePurchase(selectedProductId);
+                      }
                     }}
-                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg active:scale-95 text-center block"
+                    className="w-full py-3 bg-emerald-600 hover:bg-emerald-550 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg active:scale-95 text-center block"
                   >
                     {language === 'fa' ? 'تایید نهایی و اشتراک تستی' : 'Subscribe • Test Checkout'}
                   </button>
