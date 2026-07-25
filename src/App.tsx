@@ -10,6 +10,7 @@ import { JournalPage } from './pages/JournalPage';
 import { SettingsPage } from './pages/SettingsPage';
 import { CatalogPage } from './pages/CatalogPage';
 import { StorageManager } from './services/api';
+import { SignalCornerToast } from './components/SignalCornerToast';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('home');
@@ -101,11 +102,17 @@ export default function App() {
 
         {/* FLOATING MOBILE NAVBAR */}
         {!showSplash && (
-          <BottomNavigation 
-            activeTab={activeTab} 
-            setActiveTab={setActiveTab} 
-            language={language} 
-          />
+          <>
+            <BottomNavigation 
+              activeTab={activeTab} 
+              setActiveTab={setActiveTab} 
+              language={language} 
+            />
+            <SignalCornerToast 
+              language={language} 
+              onNavigate={setActiveTab} 
+            />
+          </>
         )}
       </div>
     </>

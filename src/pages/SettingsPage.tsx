@@ -25,7 +25,8 @@ import {
   CreditCard,
   Lock,
   ShoppingBag,
-  Download
+  Download,
+  Share2
 } from 'lucide-react';
 
 interface SettingsPageProps {
@@ -220,6 +221,37 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
     setSettings(next);
     StorageManager.saveSettings(next);
     playLocalBeep(1000, 0.1);
+    triggerSuccessGlow();
+  };
+
+  const handleUpdateSignalCornerNotification = (val: boolean) => {
+    const next = { ...settings, signalCornerNotification: val };
+    setSettings(next);
+    StorageManager.saveSettings(next);
+    playLocalBeep(1100, 0.1);
+    triggerSuccessGlow();
+  };
+
+  const handleTestCornerNotification = () => {
+    const testSignal = {
+      id: `sig-test-${Date.now()}`,
+      symbol: 'XAUUSD',
+      type: 'BUY' as const,
+      entryPrice: 2415.50,
+      tp1: 2422.00,
+      tp2: 2428.50,
+      tp3: 2435.00,
+      sl: 2410.00,
+      timestamp: new Date().toISOString(),
+      status: 'ACTIVE' as const,
+      notes: language === 'fa' 
+        ? 'سیگنال آزمایشی: تاییدیه نفوذ در اردر بلاک صعودی (Bullish OB) طلا همراه با پر شدن گپ FVG.'
+        : 'Test Signal: Bullish Order Block mitigation conformed in London session.',
+      session: 'LONDON' as const,
+      strategy: 'SMC' as const
+    };
+
+    window.dispatchEvent(new CustomEvent('onigama_signal_issued', { detail: testSignal }));
     triggerSuccessGlow();
   };
 
@@ -632,6 +664,41 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                 <span className={`block w-5.5 h-5.5 rounded-full bg-white transition-all duration-300 transform ${
                   settings.notifications ? (language === 'fa' ? '-translate-x-5.5' : 'translate-x-[22px]') : 'translate-x-0'
                 }`} />
+              </button>
+            </div>
+
+            {/* CORNER SIGNAL TOAST NOTIFICATION */}
+            <div className="flex justify-between items-center py-1">
+              <div>
+                <span className="text-sm font-semibold text-slate-200 block flex items-center gap-1.5">
+                  <Bell className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                  <span>{language === 'fa' ? 'نوتیفیکیشن گوشه نرم‌افزار هنگام صدور سیگنال' : 'Corner Signal Popup Notification'}</span>
+                </span>
+                <span className="text-[11px] text-slate-400 block mt-0.5">
+                  {language === 'fa' ? 'نمایش بنر شناور لحظه‌ای در گوشه صفحه هنگام تحلیل و صدور سیگنال جدید' : 'Show instant floating alert toast in screen corner whenever a signal is generated'}
+                </span>
+              </div>
+              <button
+                onClick={() => handleUpdateSignalCornerNotification(settings.signalCornerNotification === false ? true : false)}
+                className={`w-12 h-6.5 rounded-full p-0.5 transition-colors duration-300 relative focus:outline-none cursor-pointer ${
+                  settings.signalCornerNotification !== false ? 'bg-amber-500' : 'bg-slate-800'
+                }`}
+              >
+                <span className={`block w-5.5 h-5.5 rounded-full bg-white transition-all duration-300 transform ${
+                  settings.signalCornerNotification !== false ? (language === 'fa' ? '-translate-x-5.5' : 'translate-x-[22px]') : 'translate-x-0'
+                }`} />
+              </button>
+            </div>
+
+            {/* TEST CORNER NOTIFICATION BUTTON */}
+            <div className="pt-1">
+              <button
+                type="button"
+                onClick={handleTestCornerNotification}
+                className="w-full py-2.5 px-3 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold text-xs rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
+              >
+                <Bell className="w-4 h-4 text-amber-400 animate-bounce shrink-0" />
+                <span>{language === 'fa' ? 'تست نمایش نوتیفیکیشن گوشه تصویر' : 'Test Corner Signal Notification Toast'}</span>
               </button>
             </div>
 
@@ -1481,6 +1548,26 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                           </p>
                         </div>
                       )}
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (navigator.share) {
+                            navigator.share({
+                              title: 'Onigama FX Trading App',
+                              text: language === 'fa' ? 'وب اپلیکیشن تحلیل و سیگنال طلا اونیگاما' : 'Onigama FX Trading Platform',
+                              url: window.location.href,
+                            }).catch(() => {});
+                          } else {
+                            navigator.clipboard.writeText(window.location.href);
+                            alert(language === 'fa' ? 'لینک برنامه کپی شد! می‌توانید آن را در مرورگر خود باز کرده و به صفحه اصلی (Home Screen) اضافه کنید.' : 'Link copied to clipboard!');
+                          }
+                        }}
+                        className="w-full mt-2.5 py-2.5 bg-gradient-to-r from-amber-500/15 to-yellow-500/15 hover:from-amber-500/25 hover:to-yellow-500/25 border border-amber-500/30 text-amber-300 font-bold rounded-2xl text-[11px] flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 shadow-sm"
+                      >
+                        <Share2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
+                        <span>{language === 'fa' ? 'اشتراک‌گذاری و نصب میانبر روی گوشی (آیفون / آندروید)' : 'Share & Save to Home Screen (iOS / Android)'}</span>
+                      </button>
                     </div>
                   )}
                 </div>

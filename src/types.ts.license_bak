@@ -71,7 +71,6 @@ export interface UserProfile {
   subscriptionTier: 'free' | 'premium' | 'vip';
   activationKey: string;
   isActivated: boolean;
-  deviceId?: string;
 }
 
 export interface MarketCandle {
@@ -81,57 +80,5 @@ export interface MarketCandle {
   low: number;
   close: number;
   volume: number;
-}
-
-export interface BotSettings {
-  botName: string;
-  businessName: string;
-  autoReplyEnabled: boolean;
-  responseDelaySec: number;
-  welcomeMessage: string;
-  fallbackMessage: string;
-  contactEmail: string;
-  contactPhone: string;
-  systemPrompt: string;
-}
-
-export interface ChatMessage {
-  id: string;
-  role: 'customer' | 'ai' | 'agent';
-  text: string;
-  timestamp: string;
-  status: 'sent' | 'delivered' | 'read';
-}
-
-export interface ChatConversation {
-  id: string;
-  customerName: string;
-  customerEmail?: string;
-  customerPhone?: string;
-  avatarUrl?: string;
-  status: 'active' | 'needs_human' | 'resolved' | 'active_ai' | 'needs_agent';
-  lastMessageTime: string;
-  lastMessageText?: string;
-  unreadCount: number;
-  messages: ChatMessage[];
-}
-
-export interface FaqItem {
-  id: string;
-  category: string;
-  question: string;
-  answer: string;
-  keywords?: string[];
-}
-
-export interface AnalyticsData {
-  totalReceived: number;
-  totalAiReplies: number;
-  totalAgentReplies: number;
-  avgResponseTimeMs: number;
-  satisfactionRate: number;
-  activeChats: number;
-  volumeHistory: { date: string; customer: number; ai: number }[];
-  categoryHits: { name: string; value: number }[];
 }
 

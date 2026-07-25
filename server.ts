@@ -1,7 +1,42 @@
-import express from "express";
+async function fetchYahooCandles(symbol: string) {
+    const map: Record<string, string> = {
+      XAUUSD: "GC=F", XAGUSD: "SI=F", EURUSD: "EURUSD=X",
+      GBPUSD: "GBPUSD=X", USDJPY: "USDJPY=X", BTCUSD: "BTC-USD",
+      ETHUSD: "ETH-USD", OIL: "CL=F"
+    };
+    const ticker = map[symbol.toUpperCase()] || symbol;
+    const ua = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36";
+    for (const host of ["query1.finance.yahoo.com", "query2.finance.yahoo.com"]) {
+      try {
+        const url = `https://${host}/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1h&range=60d`;
+        const r = await fetch(url, { headers: { "User-Agent": ua } });
+        if (!r.ok) continue;
+        const j = await r.json();
+        const result = j?.chart?.result?.[0];
+        if (!result) continue;
+        const ts = result.timestamp || [];
+        const q = result.indicators?.quote?.[0];
+        if (!q || !Array.isArray(q.close) || ts.length === 0) continue;
+        const candles = [];
+        for (let i = 0; i < ts.length; i++) {
+          const o = q.open?.[i], h = q.high?.[i], l = q.low?.[i], c = q.close?.[i];
+          if (typeof ts[i] === "number" && typeof o === "number" && !isNaN(o) &&
+              typeof h === "number" && !isNaN(h) && typeof l === "number" && !isNaN(l) &&
+              typeof c === "number" && !isNaN(c)) {
+            candles.push({ timestamp: ts[i], open: o, high: h, low: l, close: c, volume: q.volume?.[i] || 0 });
+          }
+        }
+        if (candles.length >= 25) return candles;
+      } catch { continue; }
+    }
+    throw new Error(`Could not fetch candles for ${symbol}`);
+
+  }import express from "express";
+import { query } from "./db";
+import crypto from "crypto";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { DbService } from "./server/db";
+import { parseStringPromise } from "xml2js";
 
 async function fetchYahooChartPrice(symbol: string): Promise<{ price: number; high: number; low: number; change: number } | null> {
   const hosts = ["query1.finance.yahoo.com", "query2.finance.yahoo.com"];
@@ -42,100 +77,12 @@ async function fetchYahooChartPrice(symbol: string): Promise<{ price: number; hi
   return null;
 }
 
-async function fetchYahooChartCandles(symbol: string): Promise<any[] | null> {
-  const hosts = ["query1.finance.yahoo.com", "query2.finance.yahoo.com"];
-  const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36";
-  
-  const mapping: Record<string, string> = {
-    'XAUUSD': 'GC=F',
-    'XAGUSD': 'SI=F',
-    'BTCUSD': 'BTC-USD',
-    'ETHUSD': 'ETH-USD',
-    'EURUSD': 'EURUSD=X',
-    'GBPUSD': 'GBPUSD=X',
-    'USDJPY': 'JPY=X',
-    'AUDUSD': 'AUDUSD=X',
-    'USDCAD': 'CAD=X',
-    'US30': '^DJI',
-    'NAS100': '^NDX',
-    'OIL': 'BZ=F'
-  };
-  const ticker = mapping[symbol] || symbol;
-
-  for (const host of hosts) {
-    try {
-      const url = `https://${host}/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1h&range=7d`;
-      const res = await fetch(url, { headers: { "User-Agent": userAgent } });
-      if (res.ok) {
-        const json = await res.json();
-        const result = json?.chart?.result?.[0];
-        if (result) {
-          const timestamps = result.timestamp || [];
-          const quotes = result.indicators?.quote?.[0];
-          if (quotes && Array.isArray(quotes.close) && timestamps.length > 0) {
-            const candles = [];
-            for (let i = 0; i < timestamps.length; i++) {
-              const t = timestamps[i];
-              const o = quotes.open?.[i];
-              const h = quotes.high?.[i];
-              const l = quotes.low?.[i];
-              const c = quotes.close?.[i];
-              const v = quotes.volume?.[i] || 0;
-
-              if (
-                typeof t === 'number' &&
-                typeof o === 'number' && !isNaN(o) &&
-                typeof h === 'number' && !isNaN(h) &&
-                typeof l === 'number' && !isNaN(l) &&
-                typeof c === 'number' && !isNaN(c)
-              ) {
-                candles.push({
-                  timestamp: t,
-                  open: o,
-                  high: h,
-                  low: l,
-                  close: c,
-                  volume: v
-                });
-              }
-            }
-            if (candles.length >= 25) {
-              return candles;
-            }
-          }
-        }
-      }
-    } catch (err) {
-      console.error(`Error fetching chart candles for ${symbol} on ${host}:`, err);
-    }
-  }
-  return null;
-}
-
 async function startServer() {
   const app = express();
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
   // Enable JSON bodies
   app.use(express.json());
-
-  // API: Live Candles Proxy (highly reliable server-side fetch)
-  app.get("/api/candles", async (req, res) => {
-    try {
-      const symbol = req.query.symbol as string;
-      if (!symbol) {
-        return res.status(400).json({ success: false, error: "symbol is required" });
-      }
-
-      const candles = await fetchYahooChartCandles(symbol);
-      if (candles) {
-        return res.json({ success: true, data: candles });
-      }
-      return res.status(404).json({ success: false, error: `Could not fetch candles for ${symbol}` });
-    } catch (err: any) {
-      res.status(500).json({ success: false, error: err?.message || "Internal candle proxy error" });
-    }
-  });
 
   // API: Live Market Prices Proxy
   app.get("/api/market-prices", async (req, res) => {
@@ -272,264 +219,279 @@ async function startServer() {
     }
   });
 
-  // API: License Verification
-  app.post("/api/license/check", async (req, res) => {
+  async function translateToFa(text: string): Promise<string> {
     try {
-      const { deviceId } = req.body;
-      if (!deviceId) {
-        return res.status(400).json({ success: false, error: "deviceId is required" });
+      const url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=en&tl=fa&dt=t&q=" + encodeURIComponent(text);
+      const r = await fetch(url, { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" } });
+      if (!r.ok) return text;
+      const data = await r.json();
+      if (Array.isArray(data) && Array.isArray(data[0])) {
+        const parts = data[0].map((seg: any) => (Array.isArray(seg) ? seg[0] : "")).filter(Boolean);
+        const joined = parts.join("").trim();
+        return joined || text;
       }
+      return text;
+    } catch (_) {
+      return text;
+    }
+  }
+  let __newsCache: { data: any[]; ts: number } | null = null;
+  const __NEWS_TTL = 5 * 60 * 1000; // 5 minutes
+  app.get("/api/live-news", async (req, res) => {
+    if (__newsCache && Date.now() - __newsCache.ts < __NEWS_TTL) {
+      return res.json({ success: true, count: __newsCache.data.length, news: __newsCache.data, cached: true });
+    }
+    const rssUrls = [
+      "https://www.forexlive.com/feed",
+      "https://investinglive.com/feed/",
+      "https://m.investing.com/rss/news.rss"
+    ];
 
-      let device = await DbService.getDevice(deviceId);
-      
-      // If the device does not exist, initialize it in the database with standard FREE status
-      if (!device) {
-        device = {
-          deviceId,
-          status: "FREE",
-          activatedAt: null,
-          expiresAt: null,
-          licenseKey: null,
-          updatedAt: new Date().toISOString()
-        };
-        await DbService.saveDevice(device);
+    for (const rssUrl of rssUrls) {
+      try {
+        const r = await fetch(rssUrl, {
+          headers: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+            "Accept": "application/rss+xml, application/xml, text/xml"
+          }
+        });
+        if (!r.ok) continue;
+        const xml = await r.text();
+        const parsed = await parseStringPromise(xml);
+        const items = parsed?.rss?.channel?.[0]?.item || [];
+        const news = items.slice(0, 30).map((item: any) => {
+          const title = (item.title && item.title[0]) || "";
+          const link = (item.link && item.link[0]) || "";
+          const pubDate = (item.pubDate && item.pubDate[0]) || "";
+          const guid = (item.guid && (item.guid[0]?._ || item.guid[0])) || link || title;
+          const lt = String(title).toLowerCase();
+          let sentiment: "BULLISH" | "BEARISH" | "NEUTRAL" = "NEUTRAL";
+          if (/(rise|climb|surge|rally|bull|higher|gain|jump)/.test(lt)) sentiment = "BULLISH";
+          else if (/(fall|slide|drop|plunge|bear|lower|sink|tumble)/.test(lt)) sentiment = "BEARISH";
+          let relatedSymbol = "ALL";
+          if (/(gold|xau)/.test(lt)) relatedSymbol = "XAUUSD";
+          else if (/(euro|eur)/.test(lt)) relatedSymbol = "EURUSD";
+          else if (/(gbp|pound|sterling)/.test(lt)) relatedSymbol = "GBPUSD";
+          else if (/(yen|jpy)/.test(lt)) relatedSymbol = "USDJPY";
+          else if (/(bitcoin|btc|crypto)/.test(lt)) relatedSymbol = "BTCUSD";
+          else if (/(oil|crude|wti|brent)/.test(lt)) relatedSymbol = "OIL";
+          else if (/(dow|nasdaq|s&p|index|equities|stocks)/.test(lt)) relatedSymbol = "US30";
+          return { id: String(guid), title: String(title), link: String(link), pubDate: String(pubDate), sentiment, relatedSymbol, source: "Live RSS Feed" };
+        });
+        if (news.length === 0) continue;
+
+        // Translate each headline to Persian (parallel; fall back to English on failure)
+        const translated = await Promise.all(news.map(async (n: any) => {
+          const titleFa = await translateToFa(n.title);
+          return { ...n, titleFa };
+        }));
+
+        __newsCache = { data: translated, ts: Date.now() };
+        return res.json({ success: true, count: translated.length, news: translated });
+      } catch (err: any) {
+        console.error(`[/api/live-news] failed for ${rssUrl}:`, err?.message);
       }
+    }
 
-      // Check if VIP subscription has expired
-      let isVIP = device.status === "VIP";
-      if (isVIP && device.expiresAt) {
-        const expiresTime = new Date(device.expiresAt).getTime();
-        const nowTime = Date.now();
-        if (nowTime > expiresTime) {
-          // License expired! Revert to FREE
-          device.status = "FREE";
-          device.updatedAt = new Date().toISOString();
-          await DbService.saveDevice(device);
-          isVIP = false;
-        }
-      }
-
-      res.json({
-        success: true,
-        data: {
-          deviceId: device.deviceId,
-          status: device.status,
-          isVIP,
-          expiresAt: device.expiresAt,
-          licenseKey: device.licenseKey,
+    if (__newsCache) {
+      return res.json({ success: true, count: __newsCache.data.length, news: __newsCache.data, stale: true });
+    }
+    res.status(502).json({ success: false, error: "Live news temporarily unavailable" });
+  });
+  let __econCache: { data: any[]; ts: number } | null = null;
+  const __ECON_TTL = 10 * 60 * 1000; // 10 minutes
+  app.get("/api/econ-events", async (req, res) => {
+    // Serve fresh cache without hitting upstream (prevents 429 rate limiting)
+    if (__econCache && Date.now() - __econCache.ts < __ECON_TTL) {
+      return res.json({ success: true, count: __econCache.data.length, events: __econCache.data, cached: true });
+    }
+    try {
+      const url = "https://nfs.faireconomy.media/ff_calendar_thisweek.json";
+      const r = await fetch(url, {
+        headers: {
+          "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+          "Accept": "application/json"
         }
       });
+      if (!r.ok) throw new Error("upstream status " + r.status);
+      const data = await r.json();
+      if (!Array.isArray(data)) throw new Error("unexpected payload shape");
+      __econCache = { data, ts: Date.now() };
+      res.json({ success: true, count: data.length, events: data });
     } catch (err: any) {
-      console.error("Error checking license status:", err);
-      res.status(500).json({ success: false, error: err?.message || "Internal license check error" });
+      console.error("[/api/econ-events] failed:", err?.message);
+      // Stale-while-error: if we have any old cache, serve it rather than failing
+      if (__econCache) {
+        return res.json({ success: true, count: __econCache.data.length, events: __econCache.data, stale: true });
+      }
+      res.status(502).json({ success: false, error: "Economic calendar temporarily unavailable" });
+    }
+  });
+ app.get("/api/candles", async (req, res) => {
+    try {
+      const symbol = String(req.query.symbol || "XAUUSD");
+      const candles = await fetchYahooCandles(symbol);
+      res.json({ symbol, count: candles.length, candles });
+    } catch (err: any) {
+      console.error("[/api/candles] failed:", err?.message);
+      res.status(502).json({ error: "Market data temporarily unavailable" });
+    }
+  });
+   app.post("/api/license/check", async (req, res) => {
+    try {
+      const { deviceId, fullName, email } = req.body || {};
+      if (!deviceId || typeof deviceId !== "string") {
+        return res.status(400).json({ error: "deviceId لازم است" });
+      }
+
+      // دستگاه را ثبت یا last_seen را به‌روز کن
+      await query(
+        `INSERT INTO devices (device_id, full_name, email, last_seen)
+         VALUES ($1, $2, $3, now())
+         ON CONFLICT (device_id)
+         DO UPDATE SET last_seen = now(),
+                       full_name = COALESCE(EXCLUDED.full_name, devices.full_name),
+                       email = COALESCE(EXCLUDED.email, devices.email)`,
+        [deviceId, fullName || null, email || null]
+      );
+
+      // وضعیت اشتراک را بخوان
+      const sub = await query(
+        `SELECT tier, source, expires_at, is_active
+         FROM subscriptions
+         WHERE device_id = $1`,
+        [deviceId]
+      );
+
+      if (sub.rows.length === 0) {
+        return res.json({ tier: "free", isActivated: false });
+      }
+
+      const row = sub.rows[0];
+      // اگر منقضی شده، free برگردان
+      if (row.expires_at && new Date(row.expires_at) < new Date()) {
+        await query(
+          `UPDATE subscriptions SET is_active = false WHERE device_id = $1`,
+          [deviceId]
+        );
+        return res.json({ tier: "free", isActivated: false, expired: true });
+      }
+
+      if (!row.is_active) {
+        return res.json({ tier: "free", isActivated: false });
+      }
+
+      return res.json({
+        tier: row.tier,
+        isActivated: row.tier !== "free",
+        source: row.source,
+        expiresAt: row.expires_at,
+      });
+    } catch (e) {
+      console.error("license/check error:", e);
+      return res.status(500).json({ error: "خطای سرور" });
     }
   });
 
-  // API: Activate Key
+  // --- فعال‌سازی با کد دستی ---
+  // کاربر کدی که خریده وارد می‌کند؛ سرور چک و فعال می‌کند.
   app.post("/api/license/activate", async (req, res) => {
     try {
-      const { deviceId, key } = req.body;
-      if (!deviceId || !key) {
-        return res.status(400).json({ success: false, error: "deviceId and license key are required" });
+      const { deviceId, keyCode } = req.body || {};
+      if (!deviceId || !keyCode) {
+        return res.status(400).json({ error: "deviceId و keyCode لازم است" });
       }
 
-      const cleanKey = key.toUpperCase().trim();
-      const licenseKeyDoc = await DbService.getLicenseKey(cleanKey);
+      // دستگاه باید از قبل ثبت شده باشد (check قبلا صدا زده شده)
+      await query(
+        `INSERT INTO devices (device_id, last_seen)
+         VALUES ($1, now())
+         ON CONFLICT (device_id) DO UPDATE SET last_seen = now()`,
+        [deviceId]
+      );
 
-      if (!licenseKeyDoc) {
-        return res.status(404).json({ success: false, error: "Invalid license key" });
+      // کد را پیدا کن
+      const keyRes = await query(
+        `SELECT key_code, tier, duration_days, is_used FROM license_keys WHERE key_code = $1`,
+        [keyCode.trim()]
+      );
+
+      if (keyRes.rows.length === 0) {
+        return res.status(404).json({ error: "کد لایسنس نامعتبر است", ok: false });
+      }
+      const key = keyRes.rows[0];
+      if (key.is_used) {
+        return res.status(409).json({ error: "این کد قبلا استفاده شده است", ok: false });
       }
 
-      if (licenseKeyDoc.status !== "UNUSED") {
-        return res.status(400).json({ success: false, error: "This license key has already been used" });
-      }
-
-      // Get or create device
-      let device = await DbService.getDevice(deviceId);
-      if (!device) {
-        device = {
-          deviceId,
-          status: "FREE",
-          activatedAt: null,
-          expiresAt: null,
-          licenseKey: null,
-          updatedAt: new Date().toISOString()
-        };
-      }
-
-      // Calculate expiration date
-      const activatedAt = new Date().toISOString();
+      // محاسبه تاریخ انقضا
       let expiresAt: string | null = null;
-      if (licenseKeyDoc.durationDays < 99999) {
-        const expDate = new Date();
-        expDate.setDate(expDate.getDate() + licenseKeyDoc.durationDays);
-        expiresAt = expDate.toISOString();
+      if (key.duration_days) {
+        const d = new Date();
+        d.setDate(d.getDate() + key.duration_days);
+        expiresAt = d.toISOString();
       }
 
-      // Update device
-      device.status = "VIP";
-      device.activatedAt = activatedAt;
-      device.expiresAt = expiresAt;
-      device.licenseKey = cleanKey;
-      device.updatedAt = new Date().toISOString();
+      // کد را مصرف‌شده علامت بزن
+      await query(
+        `UPDATE license_keys SET is_used = true, used_by = $1, used_at = now() WHERE key_code = $2`,
+        [deviceId, key.key_code]
+      );
 
-      // Update key doc
-      licenseKeyDoc.status = "USED";
-      licenseKeyDoc.usedByDeviceId = deviceId;
-      licenseKeyDoc.usedAt = activatedAt;
+      // اشتراک را بساز یا به‌روز کن
+      await query(
+        `INSERT INTO subscriptions (device_id, tier, source, started_at, expires_at, is_active)
+         VALUES ($1, $2, 'manual_key', now(), $3, true)
+         ON CONFLICT (device_id)
+         DO UPDATE SET tier = EXCLUDED.tier, source = 'manual_key',
+                       started_at = now(), expires_at = EXCLUDED.expires_at, is_active = true`,
+        [deviceId, key.tier, expiresAt]
+      );
 
-      // Save to database
-      await DbService.saveDevice(device);
-      await DbService.saveLicenseKey(licenseKeyDoc);
-
-      // Create a subscription record for audit trail
-      const subscriptionId = `sub_act_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
-      await DbService.saveSubscription({
-        subscriptionId,
-        deviceId,
-        platform: "LICENSE_KEY",
-        status: "ACTIVE",
-        productId: `license_${licenseKeyDoc.durationDays}d`,
-        expiresAt,
-        updatedAt: new Date().toISOString()
-      });
-
-      res.json({
-        success: true,
-        message: "License activated successfully",
-        data: {
-          deviceId: device.deviceId,
-          status: device.status,
-          isVIP: true,
-          expiresAt: device.expiresAt,
-          licenseKey: device.licenseKey
-        }
-      });
-    } catch (err: any) {
-      console.error("Error activating license key:", err);
-      res.status(500).json({ success: false, error: err?.message || "Internal license activation error" });
+      return res.json({ ok: true, tier: key.tier, expiresAt });
+    } catch (e) {
+      console.error("license/activate error:", e);
+      return res.status(500).json({ error: "خطای سرور", ok: false });
     }
   });
 
-  // API: Admin Create License Key
+  // --- ساخت کد جدید (فقط برای ادمین/خودت) ---
+  // با هدر مخفی محافظت می‌شود تا فقط تو بتوانی کد بسازی.
   app.post("/api/admin/create-key", async (req, res) => {
     try {
-      const { secretToken, key, durationDays } = req.body;
-      
-      // Protection check using ADMIN_SECRET_KEY environment variable
-      const serverSecret = process.env.ADMIN_SECRET_KEY || "onigama-admin-super-secret-key-2026";
-      if (!secretToken || secretToken !== serverSecret) {
-        return res.status(401).json({ success: false, error: "Unauthorized: Invalid administrative secret token" });
+      const adminToken = req.headers["x-admin-token"];
+      // این مقدار را به یک رشته طولانی و مخفی عوض کن (در سند توضیح داده شده)
+      const ADMIN_TOKEN = process.env.ADMIN_TOKEN || "CHANGE_THIS_ADMIN_TOKEN";
+      if (adminToken !== ADMIN_TOKEN) {
+        return res.status(403).json({ error: "دسترسی غیرمجاز" });
       }
 
-      if (!key || !durationDays || typeof durationDays !== "number") {
-        return res.status(400).json({ success: false, error: "key and valid durationDays (number) are required" });
+      const { tier = "vip", durationDays = null, count = 1 } = req.body || {};
+      const created: string[] = [];
+
+      for (let i = 0; i < Math.min(count, 50); i++) {
+        // کد تصادفی به شکل ONG-XXXX-XXXX
+        const rand = crypto.randomBytes(4).toString("hex").toUpperCase();
+        const rand2 = crypto.randomBytes(4).toString("hex").toUpperCase();
+        const code = `ONG-${rand.slice(0, 4)}-${rand2.slice(0, 4)}`;
+        await query(
+          `INSERT INTO license_keys (key_code, tier, duration_days) VALUES ($1, $2, $3)`,
+          [code, tier, durationDays]
+        );
+        created.push(code);
       }
 
-      const cleanKey = key.toUpperCase().trim();
-      const existingKey = await DbService.getLicenseKey(cleanKey);
-      if (existingKey) {
-        return res.status(400).json({ success: false, error: "This license key already exists" });
-      }
-
-      const createdKey = await DbService.createLicenseKey(cleanKey, durationDays);
-      res.json({
-        success: true,
-        message: `License key created successfully: ${createdKey.key}`,
-        data: createdKey
-      });
-    } catch (err: any) {
-      console.error("Error creating license key:", err);
-      res.status(500).json({ success: false, error: err?.message || "Internal administrative error" });
+      return res.json({ ok: true, keys: created });
+    } catch (e) {
+      console.error("admin/create-key error:", e);
+      return res.status(500).json({ error: "خطای سرور" });
     }
   });
 
-  // API: Google Play Billing Validation (Placeholder for Phase 2)
-  app.post("/api/license/google-play", async (req, res) => {
-    try {
-      const { deviceId, productId, purchaseToken } = req.body;
-      if (!deviceId || !productId || !purchaseToken) {
-        return res.status(400).json({ success: false, error: "Missing required parameters" });
-      }
-
-      // Sandbox implementation for verifying purchase flow in development
-      console.log(`[Google Play Receipt Sandbox] Validating product ${productId} for device ${deviceId}`);
-
-      let device = await DbService.getDevice(deviceId);
-      if (!device) {
-        device = {
-          deviceId,
-          status: "FREE",
-          activatedAt: null,
-          expiresAt: null,
-          licenseKey: null,
-          updatedAt: new Date().toISOString()
-        };
-      }
-
-      const activatedAt = new Date().toISOString();
-      let expiresAt: string | null = null;
-      
-      if (productId.includes("monthly")) {
-        const exp = new Date();
-        exp.setDate(exp.getDate() + 30);
-        expiresAt = exp.toISOString();
-      } else if (productId.includes("annual")) {
-        const exp = new Date();
-        exp.setDate(exp.getDate() + 365);
-        expiresAt = exp.toISOString();
-      }
-
-      device.status = "VIP";
-      device.activatedAt = activatedAt;
-      device.expiresAt = expiresAt;
-      device.licenseKey = `GP_PURCHASE_${purchaseToken.substring(0, 8).toUpperCase()}`;
-      device.updatedAt = new Date().toISOString();
-
-      await DbService.saveDevice(device);
-
-      // Save purchase record
-      const purchaseId = `gp_pur_${Date.now()}`;
-      await DbService.savePurchase({
-        purchaseId,
-        deviceId,
-        platform: "PLAY_STORE",
-        transactionId: purchaseToken,
-        productId,
-        purchaseDate: activatedAt,
-        status: "COMPLETED"
-      });
-
-      // Save subscription record
-      const subscriptionId = `gp_sub_${Date.now()}`;
-      await DbService.saveSubscription({
-        subscriptionId,
-        deviceId,
-        platform: "PLAY_STORE",
-        status: "ACTIVE",
-        productId,
-        expiresAt,
-        updatedAt: new Date().toISOString()
-      });
-
-      res.json({
-        success: true,
-        message: "Google Play checkout simulated and verified successfully in sandbox",
-        data: {
-          deviceId: device.deviceId,
-          status: device.status,
-          isVIP: true,
-          expiresAt: device.expiresAt,
-          licenseKey: device.licenseKey
-        }
-      });
-    } catch (err: any) {
-      console.error("Error validating Google Play receipt:", err);
-      res.status(500).json({ success: false, error: err?.message || "Internal Google Play checkout verification error" });
-    }
-  });
-
-  // Vite middleware for development or Static server for production
+// ============================================================
+// پایان LICENSE ENDPOINTS
+// 
+ // Vite middleware for development or Static server for production
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },

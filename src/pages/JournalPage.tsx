@@ -84,7 +84,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
   const [initialBalance, setInitialBalance] = useState('10000');
   const [isCopying, setIsCopying] = useState(false);
 
-  const exportToCSV = () => {
+  const exportToCSV = async () => {
     if (trades.length === 0) {
       alert(language === 'fa' 
         ? '⚠️ هیچ معامله‌ای در ژورنال شما برای خروجی گرفتن یافت نشد. ابتدا چند معامله ثبت کنید.' 
@@ -125,17 +125,49 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
       ...rows.map(row => row.map(val => `"${val}"`).join(','))
     ].join('\n');
 
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Onigama_Trading_Statement_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const fileName = `Onigama_Trading_Statement_${new Date().toISOString().split('T')[0]}.csv`;
+    const mimeType = 'text/csv;charset=utf-8;';
+
+    // 1. Mobile Web Share API (Primary for iPhone / iOS Safari & Android Chrome)
+    if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare) {
+      try {
+        const file = new File([csvContent], fileName, { type: mimeType });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'Onigama Trading Ledger Statement',
+            text: language === 'fa' ? 'گزارش معاملات اونیگاما (CSV / اکسل)' : 'Onigama Trading Statement CSV'
+          });
+          return;
+        }
+      } catch (err: any) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
+    // 2. Standard Browser Download Link
+    try {
+      const blob = new Blob([csvContent], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', fileName);
+      link.target = '_blank';
+      link.rel = 'noopener noreferrer';
+      document.body.appendChild(link);
+      link.click();
+      setTimeout(() => {
+        document.body.removeChild(link);
+        URL.revokeObjectURL(url);
+      }, 1000);
+    } catch (e) {
+      // 3. Direct Data URL fallback for WebViews
+      const encodedUri = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csvContent);
+      window.open(encodedUri, '_blank');
+    }
   };
 
-  const exportToHTML = () => {
+  const exportToHTML = async () => {
     if (trades.length === 0) return;
 
     const startCap = parseFloat(initialBalance || '10000');
@@ -346,14 +378,51 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
 </body>
 </html>`;
 
-    const blob = new Blob([htmlContent], { type: 'text/html;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', `Onigama_Official_Statement_${new Date().toISOString().split('T')[0]}.html`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    const fileName = `Onigama_Official_Statement_${new Date().toISOString().split('T')[0]}.html`;
+    const mimeType = 'text/html;charset=utf-8;';
+
+    // 1. Mobile Web Share API (Primary for iPhone / iOS Safari & Android Chrome)
+    if (typeof navigator !== 'undefined' && navigator.share && navigator.canShare) {
+      try {
+        const file = new File([htmlContent], fileName, { type: mimeType });
+        if (navigator.canShare({ files: [file] })) {
+          await navigator.share({
+            files: [file],
+            title: 'Onigama Official Performance Statement',
+            text: language === 'fa' ? 'کارنامه معاملاتی اونیگاما' : 'Onigama Trading Ledger Statement'
+          });
+          return;
+        }
+      } catch (err: any) {
+        if (err.name === 'AbortError') return;
+      }
+    }
+
+    // 2. Open rendered document in a clean new tab/window for immediate viewing & printing on mobile & desktop
+    try {
+      const blob = new Blob([htmlContent], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const win = window.open(url, '_blank');
+      if (!win || win.closed || typeof win.closed === 'undefined') {
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', fileName);
+        link.target = '_blank';
+        link.rel = 'noopener noreferrer';
+        document.body.appendChild(link);
+        link.click();
+        setTimeout(() => {
+          document.body.removeChild(link);
+          URL.revokeObjectURL(url);
+        }, 1000);
+      }
+    } catch (e) {
+      const win = window.open('', '_blank');
+      if (win) {
+        win.document.write(htmlContent);
+        win.document.close();
+      }
+    }
   };
 
   const copyAsTableText = () => {

@@ -1,0 +1,5 @@
+  const handleInstantUpgrade = () => {
+    // غیرفعال شد — این تابع قبلاً بدون پرداخت VIP رایگان می‌داد (حفره امنیتی)
+    setActivationError(language === 'fa' ? 'این قابلیت در دسترس نیست.' : 'This feature is not available.');
+    playFailureBuzz();
+  };

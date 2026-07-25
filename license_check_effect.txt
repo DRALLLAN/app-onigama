@@ -1,0 +1,21 @@
+  // چک خودکار وضعیت VIP از سرور موقع باز شدن صفحه
+  // سرور حرف آخر را می‌زند: اگر اشتراک منقضی شده یا localStorage دستکاری شده، اصلاح می‌شود
+  useEffect(() => {
+    (async () => {
+      try {
+        const status = await checkLicense(profile.fullName, profile.email);
+        if (status.tier !== profile.subscriptionTier || status.isActivated !== profile.isActivated) {
+          const updated: UserProfile = {
+            ...profile,
+            subscriptionTier: status.tier,
+            isActivated: status.isActivated,
+          };
+          setProfile(updated);
+          StorageManager.saveProfile(updated);
+        }
+      } catch (e) {
+        // اگر سرور در دسترس نبود، وضعیت فعلی حفظ می‌شود
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);

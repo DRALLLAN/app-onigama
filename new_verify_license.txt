@@ -1,0 +1,30 @@
+  const handleVerifyLicense = async () => {
+    const key = profile.activationKey.toUpperCase().trim();
+    if (!key) {
+      setActivationError(language === 'fa' ? 'لطفاً کد لایسنس را وارد کنید.' : 'Please enter a license key.');
+      playFailureBuzz();
+      return;
+    }
+    // ارسال کد به سرور برای بررسی واقعی (نه چک محلی)
+    const result = await activateLicense(key);
+    if (result.ok) {
+      const updated: UserProfile = {
+        ...profile,
+        isActivated: true,
+        subscriptionTier: (result.tier as 'free' | 'premium' | 'vip') || 'vip'
+      };
+      setProfile(updated);
+      StorageManager.saveProfile(updated);
+      setActivationError(null);
+      setActivationSuccess(true);
+      playVictoryCascade();
+      setTimeout(() => setActivationSuccess(false), 3000);
+    } else {
+      setActivationError(
+        language === 'fa'
+          ? ('❌ ' + (result.error || 'کد لایسنس نامعتبر است.'))
+          : ('❌ ' + (result.error || 'Invalid license key.'))
+      );
+      playFailureBuzz();
+    }
+  };
