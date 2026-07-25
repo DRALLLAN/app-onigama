@@ -339,5 +339,13 @@ export const StorageManager = {
       winCount: wins.length,
       lossCount: tradesCount - wins.length
     };
+  },
+
+  getSelectedSymbol(): string {
+    return localStorage.getItem('onigama_selected_symbol') || 'XAUUSD';
+  },
+
+  saveSelectedSymbol(symbol: string) {
+    localStorage.setItem('onigama_selected_symbol', symbol);
   }
 };

@@ -84,9 +84,13 @@ export function SplashScreen({ language, onFinished }: SplashScreenProps) {
           <div className="absolute inset-3 bg-gradient-to-tr from-amber-500/10 via-yellow-500/15 to-transparent rounded-2xl rotate-12 blur-[1px]" />
 
           {/* Core Graphic Icon */}
-          <div className="relative z-10 w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#050b14] to-[#111e2f] border border-amber-500/40 shadow-xl flex items-center justify-center">
-            <TrendingUp className="w-7 h-7 text-amber-400 stroke-[2.2]" />
-            <Sparkles className="absolute top-1.5 right-1.5 w-3.5 h-3.5 text-amber-300/80 animate-pulse" />
+          <div className="relative z-10 w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#050b14] to-[#111e2f] border border-amber-500/40 shadow-xl overflow-hidden flex items-center justify-center">
+            <img 
+              src="/logo.jpg" 
+              alt="Onigama Dragon Logo" 
+              className="w-full h-full object-cover rounded-2xl"
+              referrerPolicy="no-referrer"
+            />
           </div>
 
           {/* External orbital badge elements */}

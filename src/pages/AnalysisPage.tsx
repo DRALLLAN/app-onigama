@@ -13,7 +13,15 @@ import {
   Compass, 
   Tag, 
   Target,
-  Zap
+  Zap,
+  Calculator,
+  Percent,
+  Coins,
+  Scale,
+  DollarSign,
+  RefreshCw,
+  BookOpen,
+  X
 } from 'lucide-react';
 import { TradingViewWidget } from '../components/TradingViewWidget';
 import { StorageManager } from '../services/api';
@@ -56,7 +64,12 @@ const mapTimeframeToTvInterval = (tf: Timeframe): string => {
 
 export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
   const { assets } = useGoldPrice(4);
-  const [selectedSymbol, setSelectedSymbol] = useState('XAUUSD');
+  const [selectedSymbol, setSelectedSymbolState] = useState(() => StorageManager.getSelectedSymbol());
+  
+  const setSelectedSymbol = (symbol: string) => {
+    setSelectedSymbolState(symbol);
+    StorageManager.saveSelectedSymbol(symbol);
+  };
   
   const activeAsset = assets.find(a => a.symbol === selectedSymbol) || assets[0];
   const { price } = activeAsset;
@@ -64,9 +77,69 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
   const [timeframe, setTimeframe] = useState<Timeframe>('15m');
   const [activeStrategy, setActiveStrategy] = useState<'SMC' | 'LIT'>('SMC');
   const [hoveredLevelId, setHoveredLevelId] = useState<string | null>(null);
+  const [showEduHandbook, setShowEduHandbook] = useState<boolean>(false);
+  const [eduActiveTab, setEduActiveTab] = useState<'smc' | 'lit' | 'risk'>('smc');
 
   const [profile, setProfile] = useState(() => StorageManager.getProfile());
   const isVip = profile.isActivated && (profile.subscriptionTier === 'vip' || profile.subscriptionTier === 'premium');
+
+  // Master Position Size, Lot, and Profit/Loss Calculator States
+  const [calcBalance, setCalcBalance] = useState<number>(10000);
+  const [calcRiskPercent, setCalcRiskPercent] = useState<number>(1);
+  const [calcEntryPrice, setCalcEntryPrice] = useState<string>('');
+  const [calcStopLoss, setCalcStopLoss] = useState<string>('');
+  const [calcTakeProfit, setCalcTakeProfit] = useState<string>('');
+  const [calcDirection, setCalcDirection] = useState<'buy' | 'sell'>('buy');
+
+  // Trigger sync of active symbol price only on symbol or direction changes to preserve typing state
+  useEffect(() => {
+    if (price) {
+      setCalcEntryPrice(price.toString());
+      const decimals = getDecimalsForSymbol(selectedSymbol);
+      
+      let slOffset = 0.01; // default 1%
+      let tpOffset = 0.02; // default 2%
+      
+      if (selectedSymbol === 'XAUUSD') {
+        slOffset = 0.004; // ~$10 for gold
+        tpOffset = 0.008; // ~$20 for gold
+      } else if (selectedSymbol === 'BTCUSD') {
+        slOffset = 0.02; // 2%
+        tpOffset = 0.05; // 5%
+      } else if (selectedSymbol === 'US30' || selectedSymbol === 'NAS100') {
+        slOffset = 0.005; // 0.5%
+        tpOffset = 0.015; // 1.5%
+      } else if (selectedSymbol === 'OIL') {
+        slOffset = 0.015; // 1.5%
+        tpOffset = 0.03; // 3%
+      }
+      
+      const slPrice = calcDirection === 'buy' ? price * (1 - slOffset) : price * (1 + slOffset);
+      const tpPrice = calcDirection === 'buy' ? price * (1 + tpOffset) : price * (1 - tpOffset);
+      setCalcStopLoss(slPrice.toFixed(decimals));
+      setCalcTakeProfit(tpPrice.toFixed(decimals));
+    }
+  }, [selectedSymbol, calcDirection]);
+
+  const syncWithLivePrice = () => {
+    if (price) {
+      setCalcEntryPrice(price.toString());
+      const decimals = getDecimalsForSymbol(selectedSymbol);
+      let slOffset = 0.01;
+      let tpOffset = 0.02;
+      if (selectedSymbol === 'XAUUSD') {
+        slOffset = 0.004;
+        tpOffset = 0.008;
+      } else if (selectedSymbol === 'BTCUSD') {
+        slOffset = 0.02;
+        tpOffset = 0.05;
+      }
+      const slPrice = calcDirection === 'buy' ? price * (1 - slOffset) : price * (1 + slOffset);
+      const tpPrice = calcDirection === 'buy' ? price * (1 + tpOffset) : price * (1 - tpOffset);
+      setCalcStopLoss(slPrice.toFixed(decimals));
+      setCalcTakeProfit(tpPrice.toFixed(decimals));
+    }
+  };
 
   useEffect(() => {
     setProfile(StorageManager.getProfile());
@@ -208,6 +281,61 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
     }
     return '$' + val.toLocaleString(undefined, { minimumFractionDigits: decs, maximumFractionDigits: decs });
   };
+
+  // LOT SIZE & POSITION CALCULATOR CALCULATIONS
+  const numEntry = parseFloat(calcEntryPrice) || price || 0;
+  const numSL = parseFloat(calcStopLoss) || 0;
+  const numTP = parseFloat(calcTakeProfit) || 0;
+
+  const calcRiskAmountEx = (calcBalance * calcRiskPercent) / 100;
+  const isCalcBuy = calcDirection === 'buy';
+  const calcSlDiff = isCalcBuy ? numEntry - numSL : numSL - numEntry;
+  const calcTpDiff = isCalcBuy ? numTP - numEntry : numEntry - numTP;
+
+  // Lot multipliers depending on symbol type
+  let calcLotMultiplier = 100000;
+  if (selectedSymbol === 'XAUUSD') {
+    calcLotMultiplier = 100; 
+  } else if (selectedSymbol === 'XAGUSD') {
+    calcLotMultiplier = 5000;
+  } else if (selectedSymbol === 'USDJPY') {
+    calcLotMultiplier = 1000;
+  } else if (selectedSymbol === 'BTCUSD' || selectedSymbol === 'ETHUSD') {
+    calcLotMultiplier = 1;
+  } else if (selectedSymbol === 'US30' || selectedSymbol === 'NAS100') {
+    calcLotMultiplier = 1;
+  } else if (selectedSymbol === 'OIL') {
+    calcLotMultiplier = 1000;
+  }
+
+  // Position lot sizing
+  let calcFormattedLots = '0.00';
+  if (calcSlDiff > 0) {
+    const rawLots = calcRiskAmountEx / (calcSlDiff * calcLotMultiplier);
+    calcFormattedLots = rawLots >= 0.01 ? rawLots.toFixed(2) : rawLots.toFixed(4);
+  }
+
+  // Pips Conversion
+  let calcSlPips = 0;
+  let calcTpPips = 0;
+  if (selectedSymbol === 'XAUUSD' || selectedSymbol === 'XAGUSD') {
+    calcSlPips = Math.round(calcSlDiff * 10);
+    calcTpPips = Math.round(calcTpDiff * 10);
+  } else if (selectedSymbol === 'EURUSD' || selectedSymbol === 'GBPUSD' || selectedSymbol === 'AUDUSD' || selectedSymbol === 'USDCAD') {
+    calcSlPips = Math.round(calcSlDiff * 10000);
+    calcTpPips = Math.round(calcTpDiff * 10000);
+  } else if (selectedSymbol === 'USDJPY') {
+    calcSlPips = Math.round(calcSlDiff * 100);
+    calcTpPips = Math.round(calcTpDiff * 100);
+  } else {
+    // Other assets (BTC, Indices, Oil etc)
+    calcSlPips = Math.round(calcSlDiff);
+    calcTpPips = Math.round(calcTpDiff);
+  }
+
+  const calcPotentialProfitEx = calcTpDiff * calcLotMultiplier * (parseFloat(calcFormattedLots) || 0);
+  const calcRrRatio = calcSlDiff > 0 && calcTpDiff > 0 ? (calcTpDiff / calcSlDiff).toFixed(2) : '0.00';
+  const calcReturnPercentage = calcBalance > 0 ? (calcPotentialProfitEx / calcBalance) * 100 : 0;
 
   return (
     <div className="space-y-8 pb-20 select-none font-sans overflow-hidden">
@@ -354,6 +482,243 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                 symbol={getTradingViewSymbol(selectedSymbol)}
                 interval={mapTimeframeToTvInterval(timeframe)}
               />
+            </div>
+          </div>
+
+          {/* DYNAMIC PREMIUM LOT & POSITION SIZE CALCULATOR */}
+          <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-tr from-slate-900/60 via-[#0d141e]/50 to-[#0a1b24]/40 border border-white/5 relative overflow-hidden backdrop-blur-xl space-y-5" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+            <div className="absolute top-0 left-0 w-32 h-32 bg-amber-500/[0.02] rounded-full filter blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-10 -right-10 w-44 h-44 bg-blue-500/[0.015] rounded-full filter blur-3xl pointer-events-none" />
+
+            {/* Header */}
+            <div className="flex justify-between items-center pb-3 border-b border-white/5">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-500">
+                  <Calculator className="w-4 h-4 text-amber-400" />
+                </div>
+                <div>
+                  <h3 className="text-xs font-black text-white tracking-wide uppercase">
+                    {language === 'fa' ? 'محاسبه‌گر حرفه‌ای لات خط‌مشی و مدیریت ریسک' : 'Premium Risk & Position Size Calculator'}
+                  </h3>
+                  <p className="text-[9px] text-slate-400 font-medium">
+                    {language === 'fa' ? 'همگام‌سازی هوشمند با مشخصات هر دارایی معاملاتی' : 'Auto-tailored to contract specs of selected ticker'}
+                  </p>
+                </div>
+              </div>
+              <button 
+                type="button"
+                onClick={() => syncWithLivePrice()}
+                className="p-1.5 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-all border border-white/5 flex items-center gap-1 text-[9px] font-bold cursor-pointer"
+                title={language === 'fa' ? 'همگام‌سازی قیمت با بازار لایو' : 'Sync to live price'}
+              >
+                <RefreshCw className="w-3 h-3 text-sky-400" />
+                <span>{language === 'fa' ? 'زنده' : 'Live'}</span>
+              </button>
+            </div>
+
+            {/* Direction Tab Switcher */}
+            <div className="grid grid-cols-2 p-1 bg-[#050b13]/80 border border-white/5 rounded-xl gap-1">
+              <button
+                type="button"
+                onClick={() => setCalcDirection('buy')}
+                className={`py-1.5 rounded-lg text-[10px] sm:text-[11px] font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  calcDirection === 'buy'
+                    ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 font-black shadow-[0_0_12px_rgba(16,185,129,0.1)]'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400 shrink-0" />
+                <span>{language === 'fa' ? 'خرید (BUY / LONG)' : 'BUY (Long)'}</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => setCalcDirection('sell')}
+                className={`py-1.5 rounded-lg text-[10px] sm:text-[11px] font-extrabold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  calcDirection === 'sell'
+                    ? 'bg-rose-500/15 text-rose-450 border border-rose-500/30 font-black shadow-[0_0_12px_rgba(239,68,68,0.1)]'
+                    : 'text-slate-400 hover:text-slate-200'
+                }`}
+              >
+                <TrendingDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-rose-400 shrink-0" />
+                <span>{language === 'fa' ? 'فروش (SELL / SHORT)' : 'SELL (Short)'}</span>
+              </button>
+            </div>
+
+            {/* Input Controls Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              
+              {/* Balances & Risk */}
+              <div className="space-y-3 p-3.5 bg-white/2 rounded-2xl border border-white/5">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1 text-right">
+                    <span>{language === 'fa' ? 'موجودی حساب (دلار):' : 'Account Balance (USD):'}</span>
+                  </label>
+                  <div className="relative">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 font-mono font-bold">$</span>
+                    <input 
+                      type="number" 
+                      value={calcBalance}
+                      onChange={(e) => setCalcBalance(Math.max(0, parseFloat(e.target.value) || 0))}
+                      className="w-full bg-[#050b13]/80 border border-white/10 rounded-xl py-1.5 pl-7 pr-3 text-xs font-mono text-white text-left focus:outline-none focus:border-amber-500/40"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-300 flex justify-between items-center text-right">
+                    <span>{language === 'fa' ? 'درصد ریسک معامله (%)' : 'Risk Percentage:'}</span>
+                    <span className="text-[9px] font-mono font-extrabold text-[#6f87a0]">{calcRiskPercent}%</span>
+                  </label>
+                  <div className="flex gap-2 items-center">
+                    <input 
+                      type="range" 
+                      min="0.1" 
+                      max="10" 
+                      step="0.1"
+                      value={calcRiskPercent}
+                      onChange={(e) => setCalcRiskPercent(parseFloat(e.target.value) || 1)}
+                      className="flex-1 accent-amber-500 bg-[#050b13] h-1 rounded-lg outline-none cursor-pointer"
+                    />
+                    <input 
+                      type="number" 
+                      value={calcRiskPercent}
+                      step="0.1"
+                      min="0.1" 
+                      onChange={(e) => setCalcRiskPercent(Math.max(0.1, parseFloat(e.target.value) || 1))}
+                      className="w-14 bg-[#050b13]/80 border border-white/10 rounded-lg py-1 text-center text-xs font-mono text-white focus:outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Trade Settings Prices */}
+              <div className="space-y-3 p-3.5 bg-white/2 rounded-2xl border border-white/5">
+                <div className="space-y-1.5">
+                  <label className="text-[10px] font-bold text-slate-300 flex justify-between items-center text-right">
+                    <span>{language === 'fa' ? 'قیمت ورود:' : 'Entry Price:'}</span>
+                    <span className="text-[8px] font-semibold text-slate-500 uppercase font-mono">{selectedSymbol} specs</span>
+                  </label>
+                  <input 
+                    type="number" 
+                    step="0.0001"
+                    value={calcEntryPrice}
+                    onChange={(e) => setCalcEntryPrice(e.target.value)}
+                    placeholder={price.toString()}
+                    className="w-full bg-[#050b13]/80 border border-white/10 rounded-xl py-1.5 px-3 text-xs font-mono text-white text-left focus:outline-none focus:border-amber-500/40"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1 text-right">
+                      <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block shrink-0" />
+                      <span>{language === 'fa' ? 'حد ضرر (SL):' : 'Stop Loss (SL):'}</span>
+                    </label>
+                    <input 
+                      type="number" 
+                      step="0.0001"
+                      value={calcStopLoss}
+                      onChange={(e) => setCalcStopLoss(e.target.value)}
+                      className="w-full bg-[#050b13]/80 border border-white/10 rounded-xl py-1.5 px-2.5 text-xs font-mono text-white text-left focus:outline-none focus:border-rose-500/30"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1 text-right">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shrink-0" />
+                      <span>{language === 'fa' ? 'حد سود (TP):' : 'Take Profit (TP):'}</span>
+                    </label>
+                    <input 
+                      type="number" 
+                      step="0.0001"
+                      value={calcTakeProfit}
+                      onChange={(e) => setCalcTakeProfit(e.target.value)}
+                      className="w-full bg-[#050b13]/80 border border-white/10 rounded-xl py-1.5 px-2.5 text-xs font-mono text-white text-left focus:outline-none focus:border-emerald-500/30"
+                    />
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            {/* Calculations Outputs Matrix Card */}
+            <div className="p-4 rounded-2xl bg-[#040911]/90 border border-white/5 space-y-4">
+              
+              {/* Critical Target Lots Showcase */}
+              <div className="flex flex-col sm:flex-row justify-between items-center gap-3 bg-gradient-to-tr from-amber-500/[0.03] to-[#6f87a0]/[0.05] p-3.5 rounded-xl border border-amber-500/10">
+                <div className="text-center sm:text-right">
+                  <span className="text-[9px] text-[#6f87a0] font-black uppercase tracking-wider block">
+                    {language === 'fa' ? 'حجم بهینه برای ورود ایمن به پوزیشن' : 'SUGGESTED LOT SIZE FOR SAFE RISK LIMIT'}
+                  </span>
+                  <span className="text-xs text-slate-200 block font-medium mt-0.5">
+                    {language === 'fa' 
+                      ? `بابت دارایی ${selectedSymbol} با اهرم پیش‌فرض` 
+                      : `Tailored position structure for active ${selectedSymbol}`}
+                  </span>
+                </div>
+                
+                <div className="flex items-center gap-2">
+                  <div className="px-5 py-2.5 rounded-xl bg-slate-900 border border-amber-500/30 shadow-[0_4px_24px_rgba(245,158,11,0.08)] flex flex-col items-center justify-center">
+                    <span className="text-lg font-black text-amber-400 font-mono tracking-wider">{calcFormattedLots}</span>
+                    <span className="text-[8px] font-black tracking-widest text-[#6f87a0] uppercase mt-0.5">
+                      {language === 'fa' ? 'لات استاندارد' : 'STD LOTS'}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Grid 4 pillars */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+                
+                <div className="p-2.5 rounded-xl bg-white/2 border border-white/5">
+                  <span className="text-[9px] text-slate-500 font-bold block">
+                    {language === 'fa' ? 'زیان احتمالی (ریسک)' : 'Potential USD Risk'}
+                  </span>
+                  <span className="text-xs font-mono font-black text-rose-400 block mt-1">
+                    -${calcRiskAmountEx.toFixed(1)}
+                  </span>
+                  <span className="text-[8.5px] font-mono font-semibold text-slate-400 block">
+                    {calcRiskPercent}% {language === 'fa' ? 'موجودی' : 'account'}
+                  </span>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-white/2 border border-white/5">
+                  <span className="text-[9px] text-slate-500 font-bold block">
+                    {language === 'fa' ? 'سود احتمالی (ریوارد)' : 'Potential USD Reward'}
+                  </span>
+                  <span className="text-xs font-mono font-black text-emerald-400 block mt-1">
+                    +${calcPotentialProfitEx.toLocaleString(undefined, { maximumFractionDigits: 1 })}
+                  </span>
+                  <span className="text-[8.5px] font-mono font-semibold text-slate-400 block">
+                    {calcReturnPercentage.toFixed(1)}% {language === 'fa' ? 'رشد' : 'growth'}
+                  </span>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-white/2 border border-white/5">
+                  <span className="text-[9px] text-slate-500 font-bold block font-mono">
+                    {language === 'fa' ? 'نسبت ریسک/ریوارد' : 'Risk/Reward Ratio'}
+                  </span>
+                  <span className={`text-xs font-mono font-black block mt-1 ${parseFloat(calcRrRatio) >= 1.5 ? 'text-indigo-400' : 'text-slate-200'}`}>
+                    1 : {calcRrRatio}
+                  </span>
+                  <span className="text-[8.5px] font-bold text-slate-500 block">
+                    {parseFloat(calcRrRatio) >= 1.5 ? (language === 'fa' ? '🎯 عالی' : '🎯 IDEAL') : (language === 'fa' ? '⚠️ ریسکی' : '⚠️ HIGH RISK')}
+                  </span>
+                </div>
+
+                <div className="p-2.5 rounded-xl bg-white/2 border border-white/5">
+                  <span className="text-[9px] text-slate-500 font-bold block">
+                    {language === 'fa' ? 'فاصله حد ضرر (پیپ)' : 'SL Distance (Pips)'}
+                  </span>
+                  <span className="text-xs font-mono font-black text-slate-200 block mt-1">
+                    {calcSlPips} {language === 'fa' ? 'پیپ' : 'Pips'}
+                  </span>
+                  <span className="text-[8.5px] font-bold text-slate-500 block">
+                    TP: {calcTpPips} {language === 'fa' ? 'پیپ' : 'Pips'}
+                  </span>
+                </div>
+
+              </div>
+
             </div>
           </div>
 
@@ -586,7 +951,10 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                 </p>
 
                 {/* Footnote interactive link back to educational index or guidelines */}
-                <div className="flex justify-end gap-1 items-center text-[10px] text-blue-400 font-bold hover:text-blue-300 transition-colors cursor-pointer pt-1 relative z-10">
+                <div 
+                  onClick={() => setShowEduHandbook(true)}
+                  className="flex justify-end gap-1 items-center text-[10px] text-blue-400 font-bold hover:text-blue-350 transition-colors cursor-pointer pt-1 relative z-10"
+                >
                   <span>{language === 'fa' ? 'مشاهده دفترچه آموزشی کامل' : 'Read Full Educational Blueprint'}</span>
                   <ChevronRight className="w-3 h-3 transform rotate-180" />
                 </div>
@@ -597,6 +965,266 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
         </div>
       </div>
 
+      {/* COMPREHENSIVE EDUCATIONAL HANDBOOK MODAL (BILINGUAL & INTERACTIVE) */}
+      <AnimatePresence>
+        {showEduHandbook && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md"
+            dir={language === 'fa' ? 'rtl' : 'ltr'}
+          >
+            <motion.div 
+              initial={{ scale: 0.95, y: 15 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.95, y: 15 }}
+              transition={{ type: "spring", damping: 25, stiffness: 350 }}
+              className="w-full max-w-2xl bg-gradient-to-b from-[#0b131e] to-[#04080e] border border-white/10 rounded-3xl shadow-[0_20px_50px_rgba(0,0,0,0.5)] overflow-hidden flex flex-col max-h-[85vh]"
+            >
+              {/* Modal Head Header */}
+              <div className="p-5 border-b border-white/5 flex justify-between items-center bg-[#070f17]">
+                <div className="flex items-center gap-2.5">
+                  <div className="p-2 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400">
+                    <BookOpen className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h2 className="text-sm font-black text-white tracking-wide uppercase">
+                      {language === 'fa' ? 'دفترچه راهنمای آموزشی جامع اونیگاما' : 'Onigama Comprehensive Academy Guide'}
+                    </h2>
+                    <p className="text-[10px] text-slate-400">
+                      {language === 'fa' ? 'آموزش گام‌به‌گام سبک‌های معاملاتی SMC و LIT' : 'Step-by-step masterclass on SMC & LIT methodologies'}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowEduHandbook(false)}
+                  className="p-1.5 rounded-lg bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* Navigation Tabs */}
+              <div className="flex border-b border-white/5 bg-[#050b13] p-1.5 gap-1.5 shrink-0">
+                <button
+                  type="button"
+                  onClick={() => setEduActiveTab('smc')}
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    eduActiveTab === 'smc'
+                      ? 'bg-blue-500/15 text-blue-400 border border-blue-500/30'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Layers className="w-3.5 h-3.5" />
+                  <span>{language === 'fa' ? 'مفاهیم SMC' : 'SMC Theory'}</span>
+                </button>
+                
+                <button
+                  type="button"
+                  onClick={() => setEduActiveTab('lit')}
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    eduActiveTab === 'lit'
+                      ? 'bg-amber-500/15 text-amber-450 border border-amber-500/30'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Activity className="w-3.5 h-3.5" />
+                  <span>{language === 'fa' ? 'تئوری نقدینگی LIT' : 'LIT Theory'}</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setEduActiveTab('risk')}
+                  className={`flex-1 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                    eduActiveTab === 'risk'
+                      ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+                      : 'text-slate-400 hover:text-slate-200'
+                  }`}
+                >
+                  <Target className="w-3.5 h-3.5" />
+                  <span>{language === 'fa' ? 'استراتژی و محاسبات' : 'Strategy & Lots'}</span>
+                </button>
+              </div>
+
+              {/* Scrollable Material Container */}
+              <div className="flex-1 overflow-y-auto p-6 space-y-6 scrollbar-thin scrollbar-thumb-white/10">
+                
+                {/* TAB 1: SMART MONEY CONCEPTS (SMC) */}
+                {eduActiveTab === 'smc' && (
+                  <div className="space-y-5 animate-fadeIn">
+                    <div className="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 space-y-2">
+                      <h4 className="text-xs font-extrabold text-blue-400 flex items-center gap-1.5 uppercase">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>{language === 'fa' ? 'مکانیزم سفارشات پول هوشمند (SMC)' : 'Institutional Order Management (SMC)'}</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        {language === 'fa' 
+                          ? 'سبک مفاهیم پول هوشمند به ردپای بانک‌ها و موسسات بزرگ در بازار می‌پردازد. حجم‌های سنگین مالی باعث عدم تعادل و به جای گذاشتن بیس‌های معاملاتی ارزشمند می‌شود.'
+                          : 'Smart Money Concepts analyzes the footprint of major banking entities. Heavy block order distributions leave behind massive order imbalances and premium mitigation blocks.'}
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Concept 1 */}
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-black text-blue-400 block font-mono">1. Order Block (OB) - بلاک سفارشات</span>
+                        <p className="text-[10.5px] text-slate-400 leading-relaxed">
+                          {language === 'fa' 
+                            ? 'آخرین کندل مخالف قبل از حرکت شارپ و جابجایی قیمت. اردر بلاک خرید (Bullish OB) در کفی است که قبل از صعود تشکیل شده و قیمت با بازگشت به آن به دنبال میتیگیشن (تخلیه سفارشات باقی‌مانده) صعود می‌کند.'
+                            : 'The final counter-trend candle before a strong displacement. A Bullish OB is the demand origin candle left behind, and a Bearish OB is the supply origin. Institutions protect these levels carefully.'}
+                        </p>
+                      </div>
+
+                      {/* Concept 2 */}
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-black text-blue-450 block font-mono">2. Fair Value Gap (FVG) - فایپ</span>
+                        <p className="text-[10.5px] text-slate-400 leading-relaxed">
+                          {language === 'fa' 
+                            ? 'شکاف یا عدم تعادل سه کندلی در بازار که ناشی از فشار خرید یا فروش خشن است. سایه کندل اول و سوم با هم هم‌پوشانی ندارند و این فضای خالی مانند مغناطیس سحرآمیز عمل کرده و بازار برای تکمیل قیمت مجدداً به این سمت کشیده می‌شود.'
+                            : 'An imbalance created by explosive unidirectional candle ranges where high/low shadows do not overlap. The market tends to treat this empty pocket like a vacuum, drafting prices inside to balance orders.'}
+                        </p>
+                      </div>
+
+                      {/* Concept 3 */}
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-black text-blue-400 block font-mono">3. BOS & CHoCH - تغییر ساختار بازار</span>
+                        <p className="text-[10.5px] text-slate-400 leading-relaxed">
+                          {language === 'fa' 
+                            ? 'تغییر ماهیت قیمت (CHoCH) یعنی اولین نشانه شکسته شدن سقف یا کف قبلی در جهت مخالف که مژده از تغییر روند می‌دهد. شکست ساختار (BOS) تداوم همان روند جاری را تأیید می‌کند.'
+                            : 'Change of Character (CHoCH) is the first structural shift signaling trend reversal. Break of Structure (BOS) is successive breakups in the trend direction confirming momentum stability.'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 2: LIQUIDITY INDUCEMENT THEOREM (LIT) */}
+                {eduActiveTab === 'lit' && (
+                  <div className="space-y-5 animate-fadeIn">
+                    <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 space-y-2">
+                      <h4 className="text-xs font-extrabold text-amber-400 flex items-center gap-1.5 uppercase">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>{language === 'fa' ? 'تئوری نقدینگی و تله‌گذاری موسساتی (LIT)' : 'Liquidity Inducement Theorem (LIT)'}</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        {language === 'fa' 
+                          ? 'استراتژی LIT بر پایه این است که بازار برای حرکت به بنزین نیاز دارد و این بنزین چیزی جز حد ضرر (Stop Loss) معامله‌گران خرد نیست. مارکت طوری سازماندهی می‌شود که شما را به تله بیندازد.'
+                          : 'Liquidity Inducement Theorem (LIT) asserts that markets require fuel to move, and this fuel is the stop losses of retail traders. Major players engineer specific structures to trick retail strategies.'}
+                      </p>
+                    </div>
+
+                    <div className="space-y-4">
+                      {/* Concept 1 */}
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-black text-amber-400 block font-mono">1. Inducement (IDM) - القاء نقدینگی</span>
+                        <p className="text-[10.5px] text-slate-400 leading-relaxed">
+                          {language === 'fa' 
+                            ? 'تله معروفی که معامله‌گر خرد را فریب داده تا فکر کند بازار روندی را شروع کرده است. برای مثال یک شکست سقف فیک ایجاد می‌شود که معامله‌گران خرد در آن اقدام به خرید سنگین می‌کنند در حالی که بانک در حال آماده‌سازی هانت است.'
+                            : 'An early trap designed to lure retail traders into taking positions prematurely (e.g., buying a minor breakout). Once they trigger their entries, institutions hunt those piled stops to power their actual execution.'}
+                        </p>
+                      </div>
+
+                      {/* Concept 2 */}
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-black text-amber-500 block font-mono">2. Engineered Liquidity - نقدینگی مهندسی شده</span>
+                        <p className="text-[10.5px] text-slate-400 leading-relaxed">
+                          {language === 'fa' 
+                            ? 'ساخت نماهای حمایت و مقاومت تمیز یا شکست‌های خط روند. این سطوح صاف و کلاسیک باعث می‌شوند افراد فکر کنند سد محکمی است و استاپ‌های پشت آن را انباشته کنند. موسسات با خیالی آسوده تمام این استاپ‌ها را به یکباره درو می‌کنند.'
+                            : 'Clean double bottoms/tops or trendlines designed to look structurally heavy. Sizable stop-loss pools accumulate behind these transparent levels, which are later swept clean in a single flush.'}
+                        </p>
+                      </div>
+
+                      {/* Concept 3 */}
+                      <div className="space-y-1">
+                        <span className="text-[11px] font-black text-amber-400 block font-mono">3. Sweep & Hunt - پاکسازی استاپ‌ها</span>
+                        <p className="text-[10.5px] text-slate-400 leading-relaxed">
+                          {language === 'fa' 
+                            ? 'هانت یا پاکسازی نقدینگی زمانی رخ می‌دهد که قیمت به سرعت سایه بلندی زیر یک سطح مهم حمایت می‌کشد، استاپ خریداران را جمع می‌کند و بلافاصله به بالا شلیک می‌شود. این مطلوب‌ترین تاییدیه برای معامله‌گر ال‌آی‌تی است.'
+                            : 'A rapid piercing wick that sweeps accumulated liquidity pools below major lows or above major highs before sharp reverse ignition. Sweeps offer high-probability entry criteria for LIT specialists.'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* TAB 3: STRATEGY & RISK MANAGEMENT */}
+                {eduActiveTab === 'risk' && (
+                  <div className="space-y-5 animate-fadeIn">
+                    <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 space-y-2">
+                      <h4 className="text-xs font-extrabold text-emerald-400 flex items-center gap-1.5 uppercase">
+                        <Sparkles className="w-3.5 h-3.5" />
+                        <span>{language === 'fa' ? 'راهنمای گام‌به‌گام ورود ایمن همراه با محاسبات' : 'Strict Entry Standard & Sizing Strategy'}</span>
+                      </h4>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        {language === 'fa' 
+                          ? 'داشتن تحلیل درست کافی نیست؛ جادوی سوددهی مستمر تریدر در ادغام ساختار بازار با مدیریت سرمایه آهنین و محاسبه لحظه‌ای حجم پوزیشن نهفته است.'
+                          : 'High win-rate analysis is meaningless without matching capital limits. True traders blend structure maps directly with rigid lot sizing calculators to survive the random noise of institutional sweeps.'}
+                      </p>
+                    </div>
+
+                    <div className="space-y-4 text-slate-300 text-[10.5px] leading-relaxed">
+                      <div className="space-y-2">
+                        <span className="font-extrabold text-emerald-400 block">
+                          {language === 'fa' ? 'چک‌لیست ۳ مرحله‌ای ورود به پوزیشن اونیگاما:' : 'Onigama 3-Step Execution Checklist:'}
+                        </span>
+                        <ul className="list-disc list-inside space-y-2 pr-2 text-slate-400">
+                          <li>
+                            <strong className="text-white">{language === 'fa' ? 'گام ۱: تایید سطح اونیگاما: ' : 'Step 1: Check Onigama Level: '}</strong>
+                            {language === 'fa' 
+                              ? 'صبر کنید قیمت به یکی از سطوح اردر بلاک (SMC) یا نقاط هانت/Sweep راهنمای تحلیل اونیگاما برسد.'
+                              : 'Wait for the asset price to touch marked order blocks (SMC) or inducement sweeps in the Onigama guide.'}
+                          </li>
+                          <li>
+                            <strong className="text-white">{language === 'fa' ? 'گام ۲: تاییدیه تایم‌پایین: ' : 'Step 2: Low Timeframe Confirm: '}</strong>
+                            {language === 'fa' 
+                              ? 'به تایم‌فریم کوتاه‌تر (مثل ۵m یا ۱m) بروید و منتظر ایجاد تغییر ساختار رادیکال (CHoCH) یا هانت نقدینگی کندل‌ها (Sweep) بمانید.'
+                              : 'Switch to lower timeframes (e.g. 5m/1m) and secure reaction signals such as CHoCH or a sharp candle wick sweep.'}
+                          </li>
+                          <li>
+                            <strong className="text-white">{language === 'fa' ? 'گام ۳: محاسبه دقیق لات با ماشین حساب: ' : 'Step 3: Auto-Calculate Lot Size: '}</strong>
+                            {language === 'fa' 
+                              ? 'قیمت ورود تایم‌پایین و حد ضرر را در ماشین حساب بالای همین صفحه قرار دهید. درصد ریسک دلخواه خود (پیکربندی هوشمند ۱٪ تا ۲٪) را وارد کرده و فقط با حجم "لات" به دست آمده توسط سیستم معامله را ثبت کنید.'
+                              : 'Input entry and SL targets directly into the premium positioning calculator above. Limit risk to 1% or 2%, and open precisely the lot size computed by the system.'}
+                          </li>
+                        </ul>
+                      </div>
+
+                      <div className="p-3 rounded-xl bg-orange-500/[0.03] border border-orange-500/15 text-orange-350 text-[10px] space-y-1">
+                        <span className="font-black">⚠️ {language === 'fa' ? 'خط قرمز معامله‌گر:' : 'TRADER COMMANDMENT:'}</span>
+                        <p>
+                          {language === 'fa' 
+                            ? 'هیچ‌گاه بدون محاسبه حجم با حد ضرر مشخص معامله نکنید. پوزیشن‌هایی که بدون حد ضرر یا بر اساس حدس حجم باز می‌شوند منشأ کال‌مارجین و شکست تریدرها در مارکت جهانی هستند.'
+                            : 'Never execute positions without predefined stop levels or custom calculations. Over-leveraged, blind lots are the absolute main source of retail failure.'}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+
+              {/* Footer Closer button */}
+              <div className="p-4 border-t border-white/5 bg-[#050b13] flex justify-between items-center text-xs">
+                <span className="text-[10px] text-slate-500 font-bold">
+                  {language === 'fa' ? 'اونیگاما مربی معامله‌گری شما' : 'Onigama Trading Mentor'}
+                </span>
+                <button
+                  type="button"
+                  onClick={() => setShowEduHandbook(false)}
+                  className="px-4 py-1.5 rounded-xl bg-[#6f87a0] hover:bg-[#5e748d] text-white font-extrabold cursor-pointer transition-all"
+                >
+                  {language === 'fa' ? 'فهمیدم، با تشکر' : 'Understood, Thanks'}
+                </button>
+              </div>
+
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
     </div>
   );
 }
+

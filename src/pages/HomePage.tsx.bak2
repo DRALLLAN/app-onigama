@@ -350,15 +350,6 @@ export function HomePage({ onNavigate, language }: HomePageProps) {
   };
 
   // True SMC (Smart Money Concepts) & LIT (Liquidity Inducement Theorem) Scanner
-  const aggregateToH4 = (c: MarketCandle[]): MarketCandle[] => {
-    const out: MarketCandle[] = [];
-    for (let i = 0; i < c.length; i += 4) {
-      const ch = c.slice(i, i + 4);
-      if (!ch.length) continue;
-      out.push({ timestamp: ch[0].timestamp, open: ch[0].open, high: Math.max(...ch.map(x => x.high)), low: Math.min(...ch.map(x => x.low)), close: ch[ch.length - 1].close, volume: 0 });
-    }
-    return out;
-  };
   const scanSMCAndLIT = (candles: MarketCandle[], symbol: string) => {
     const latest = candles[candles.length - 1];
     
@@ -517,25 +508,7 @@ export function HomePage({ onNavigate, language }: HomePageProps) {
     } else {
       type = ema9 > ema21 ? 'BUY' : 'SELL';
     }
-    const obForScore = type === 'BUY' ? bullishOBPrice : bearishOBPrice;
-    let qualityScore = 0;
-    if (type === 'BUY' && ema9 > ema21 && latest.close > ema50) qualityScore++;
-    if (type === 'SELL' && ema9 < ema21 && latest.close < ema50) qualityScore++;
-    if (type === 'BUY' && rsi < 45) qualityScore++;
-    if (type === 'SELL' && rsi > 55) qualityScore++;
-    if (sweepPrice !== undefined || bosPrice !== undefined || obForScore !== undefined) qualityScore++;
-    const h4Candles = aggregateToH4(candles);
-    if (h4Candles.length >= 21) {
-      const h4closes = h4Candles.map(x => x.close);
-      let h4ema9 = h4closes[0], h4ema21 = h4closes[0];
-      const k9 = 2 / 10, k21 = 2 / 22;
-      for (let i = 1; i < h4closes.length; i++) {
-        h4ema9 = (h4closes[i] - h4ema9) * k9 + h4ema9;
-        h4ema21 = (h4closes[i] - h4ema21) * k21 + h4ema21;
-      }
-      if (type === 'BUY' && h4ema9 > h4ema21) qualityScore++;
-      if (type === 'SELL' && h4ema9 < h4ema21) qualityScore++;
-    }
+
     return {
       rsi,
       ema9,
@@ -549,8 +522,7 @@ export function HomePage({ onNavigate, language }: HomePageProps) {
       fvgPrice,
       session,
       strategy,
-      type,
-      qualityScore
+      type
     };
   };
 
@@ -630,7 +602,7 @@ export function HomePage({ onNavigate, language }: HomePageProps) {
 
     // Derive Take Profits logically from structural Risk-to-Reward (R:R) ratio
     const riskAmount = Math.abs(entry - slVal);
-    const tp1Val = +(entry + (isBuy ? riskAmount * 1.0 : -riskAmount * 1.0)).toFixed(decs);
+    const tp1Val = +(entry + (isBuy ? riskAmount * 1.2 : -riskAmount * 1.2)).toFixed(decs);
     const tp2Val = +(entry + (isBuy ? riskAmount * 2.5 : -riskAmount * 2.5)).toFixed(decs);
     const tp3Val = +(entry + (isBuy ? riskAmount * 4.2 : -riskAmount * 4.2)).toFixed(decs);
 
@@ -741,8 +713,7 @@ export function HomePage({ onNavigate, language }: HomePageProps) {
       obPrice: tech.obPrice ? +tech.obPrice.toFixed(decs) : undefined,
       sweepPrice: tech.sweepPrice ? +tech.sweepPrice.toFixed(decs) : undefined,
       fvgPrice: tech.fvgPrice ? +tech.fvgPrice.toFixed(decs) : undefined,
-      isRealData: true,
-      qualityScore: tech.qualityScore
+      isRealData: true
     };
   };
 
@@ -806,6 +777,31 @@ export function HomePage({ onNavigate, language }: HomePageProps) {
   const inputStep = activeAsset.type === 'FOREX' ? (selectedSymbol === 'USDJPY' ? '0.01' : '0.0001') : (selectedSymbol === 'BTCUSD' ? '1' : '0.01');
   return (
     <div className="space-y-6 pb-20 relative">
+
+      <button
+        onClick={async () => {
+          try {
+            alert('شروع بک‌تست... چند ثانیه صبر کنید');
+            await runBacktest('XAUUSD');
+          } catch (e) {
+            alert('خطا: ' + (e as Error).message);
+          }
+        }}
+        style={{
+          position: 'fixed',
+          top: '80px',
+          left: '20px',
+          zIndex: 99999,
+          background: 'red',
+          color: 'white',
+          padding: '16px 24px',
+          borderRadius: '12px',
+          fontWeight: 'bold',
+          fontSize: '16px'
+        }}
+      >
+        🧪 تست بک‌تست
+      </button>
       
       {/* FLOATING REAL-TIME SYSTEM NOTIFICATION BANNER */}
       {autoAlert.show && (
@@ -1508,15 +1504,6 @@ export function HomePage({ onNavigate, language }: HomePageProps) {
                               }`}>
                                 {sig.strategy || 'SMC'}
                               </span>
-                              {sig.qualityScore !== undefined && (
-                                <span className={`text-[9px] font-black px-1.5 py-0.5 rounded-md font-mono ${
-                                  sig.qualityScore >= 3 ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/20'
-                                  : sig.qualityScore === 2 ? 'bg-amber-500/15 text-amber-300 border border-amber-500/20'
-                                  : 'bg-slate-500/15 text-slate-400 border border-slate-500/20'
-                                }`}>
-                                  {sig.qualityScore >= 1 ? '⭐'.repeat(sig.qualityScore) : 'ضعیف'}
-                                </span>
-                              )}
                             </div>
                             <span className="text-[9px] text-slate-500 font-mono block mt-1">
                               {new Date(sig.timestamp).toLocaleTimeString(undefined, {hour: '2-digit', minute:'2-digit'})} | {new Date(sig.timestamp).toLocaleDateString()}

@@ -15,6 +15,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState<string>('home');
   const [language, setLanguage] = useState<'fa' | 'en'>('fa');
   const [showSplash, setShowSplash] = useState<boolean>(true);
+  const [theme, setTheme] = useState<'dark' | 'glass'>('dark');
 
   useEffect(() => {
     // Read cached language selection from stored dashboard preferences
@@ -22,7 +23,15 @@ export default function App() {
     if (settings && settings.language) {
       setLanguage(settings.language);
     }
+    const currentTheme = settings?.theme || 'dark';
+    setTheme(currentTheme);
+    document.documentElement.className = `theme-${currentTheme}`;
   }, []);
+
+  const handleThemeChange = (newTheme: 'dark' | 'glass') => {
+    setTheme(newTheme);
+    document.documentElement.className = `theme-${newTheme}`;
+  };
 
   const renderActiveScreen = () => {
     switch (activeTab) {
@@ -39,7 +48,7 @@ export default function App() {
       case 'catalog':
         return <CatalogPage language={language} onNavigate={setActiveTab} />;
       case 'settings':
-        return <SettingsPage language={language} setLanguage={setLanguage} />;
+        return <SettingsPage language={language} setLanguage={setLanguage} onThemeChange={handleThemeChange} />;
       default:
         return <HomePage onNavigate={setActiveTab} language={language} />;
     }
@@ -73,7 +82,7 @@ export default function App() {
         <div className="absolute top-[40%] left-[-80px] w-[240px] h-[240px] bg-sky-500/5 rounded-full blur-[80px] pointer-events-none z-0" />
 
         {/* RESPONSIVE APP FRAME */}
-        <div className="w-full max-w-md md:max-w-3xl lg:max-w-5xl xl:max-w-6xl mx-auto flex-1 flex flex-col px-4 pt-5 pb-28 md:pb-32 lg:pb-32 z-10 relative">
+        <div className="w-full lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto flex-1 flex flex-col px-3.5 sm:px-4 pt-4 sm:pt-5 pb-28 md:pb-32 z-10 relative">
           <AnimatePresence mode="wait">
             {!showSplash && (
               <motion.main

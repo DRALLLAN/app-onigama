@@ -1,7 +1,154 @@
-import { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Brain, Smile, AlertCircle, Info, CheckCircle2, ShieldAlert, TrendingUp, HelpCircle, Lock, Sparkles } from 'lucide-react';
+import { 
+  Brain, 
+  Smile, 
+  AlertCircle, 
+  Info, 
+  CheckCircle2, 
+  ShieldAlert, 
+  TrendingUp, 
+  HelpCircle, 
+  Lock, 
+  Sparkles,
+  Play,
+  Pause,
+  Volume2,
+  VolumeX,
+  RotateCcw,
+  Headphones,
+  Disc,
+  Bookmark,
+  Upload,
+  RefreshCw,
+  ChevronLeft,
+  ChevronRight,
+  BookOpen,
+  Music
+} from 'lucide-react';
 import { StorageManager } from '../services/api';
+
+interface PodcastChapter {
+  id: number;
+  title: { fa: string; en: string };
+  durationStr: string;
+  startTime: number; // in seconds
+  endTime: number;
+  summary: { fa: string; en: string };
+}
+
+const podcastChapters: PodcastChapter[] = [
+  {
+    id: 1,
+    title: { fa: 'مقدمه: سیم‌کشی ذهن برای معامله‌گری', en: 'Intro: Re-wiring the Trader’s Mind' },
+    durationStr: '03:15',
+    startTime: 0,
+    endTime: 195,
+    summary: {
+      fa: 'دکتر بهزاد قربانی تلاقی علوم اعصاب و دینامیک‌های بازار را شرح می‌دهد. مغز انسان برای بقا تکامل یافته است نه تریدینگ؛ غلبه بر فریب‌های غریزی ضرورت دارد.',
+      en: 'Dr. Behzad Ghorbani outlines how our primal brain processes threats. Re-wiring neuro-synaptic associations is the very first step toward sustainable execution.'
+    }
+  },
+  {
+    id: 2,
+    title: { fa: 'بخش ۱: آمیگدال و کنترل فوبیای ضرر', en: 'Part 1: Amygdala & Fear of Loss' },
+    durationStr: '04:20',
+    startTime: 195,
+    endTime: 455,
+    summary: {
+      fa: 'بررسی علمی ترس از دست دادن سرمایه که آمیگدال را فعال کرده و باعث خروج زودهنگام از سود یا جابجا کردن غیرمنطقی حد ضرر (پیش رفتن در زیان) می‌شود.',
+      en: 'Deep scientific analysis of loss-aversion. The amygdala fires a fight-or-flight bypass during active drawdowns, triggering premature exiting or stop dragging.'
+    }
+  },
+  {
+    id: 3,
+    title: { fa: 'بخش ۲: گیرنده‌های دوپامین و مدیریت طمع', en: 'Part 2: Dopamine & Greed Mastery' },
+    durationStr: '04:45',
+    startTime: 455,
+    endTime: 740,
+    summary: {
+      fa: 'هیجان سودهای پیاپی که گیرنده‌های دوپامین بازرگان را اشباع کرده و منشا تصمیمات هیجانی، ترید بیش از حد (Over-trade) و تخلفات لاتیج ارزیابی می‌شود.',
+      en: 'Winning streaks fill dopamine receptors with euphoria. This results in toxic overconfidence, over-trading, and catastrophic leverage violations.'
+    }
+  },
+  {
+    id: 4,
+    title: { fa: 'بخش ۳: ساخت عضله انضباط عصبی', en: 'Part 3: Building Biological Discipline' },
+    durationStr: '04:10',
+    startTime: 740,
+    endTime: 990,
+    summary: {
+      fa: 'انضباط یک تمرین فیزیکی برای قشر پیش‌پیشانی مغز است. تکنیک‌های مدیریت ریسک زیر ۱.۵٪ و پر کردن ژورنال معاملاتی به تقویت بیولوژیک این مدار ارزشمند می‌انجامد.',
+      en: 'Discipline is a physical prefrontal cortex muscle. Rigorous logging and standardizing risk below 2% biochemically overrides primitive impulses.'
+    }
+  },
+  {
+    id: 5,
+    title: { fa: 'نتیجه‌گیری: تولد یک نوروتریدر دیسیپلین‌دار', en: 'Conclusion: The Emergence of a NeuroTrader' },
+    durationStr: '02:15',
+    startTime: 990,
+    endTime: 1125,
+    summary: {
+      fa: 'بسته‌بندی آموخته‌ها و دستورالعمل اجرایی روزانه ذهن جهت آمادگی ورود به سشن‌های معاملاتی در سطح تریدرهای نخبه و آرام.',
+      en: 'Translating cognitive research into a simple daily checklist for ultimate calm and focused high-probability trading sessions.'
+    }
+  }
+];
+
+class AmbientWebSynth {
+  private ctx: AudioContext | null = null;
+  private oscs: OscillatorNode[] = [];
+  private filter: BiquadFilterNode | null = null;
+  private gain: GainNode | null = null;
+
+  start() {
+    try {
+      const AudioCtxConstructor = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtxConstructor) return;
+      this.ctx = new AudioCtxConstructor();
+      this.gain = this.ctx.createGain();
+      this.gain.gain.value = 0.15; // smooth background level
+
+      this.filter = this.ctx.createBiquadFilter();
+      this.filter.type = 'lowpass';
+      this.filter.frequency.value = 220; // warm bass pad
+
+      // Low frequency warm binaural carriers
+      const frequencies = [110, 110.5, 220, 220.8];
+      frequencies.forEach((f) => {
+        if (!this.ctx || !this.filter) return;
+        const osc = this.ctx.createOscillator();
+        osc.type = 'sine';
+        osc.frequency.value = f;
+        osc.connect(this.filter);
+        osc.start(0);
+        this.oscs.push(osc);
+      });
+
+      this.filter.connect(this.gain);
+      this.gain.connect(this.ctx.destination);
+    } catch (e) {
+      console.warn("Synth failed", e);
+    }
+  }
+
+  setVolume(vol: number) {
+    if (this.gain && this.ctx) {
+      this.gain.gain.setValueAtTime(vol * 0.15, this.ctx.currentTime);
+    }
+  }
+
+  stop() {
+    this.oscs.forEach((osc) => {
+      try { osc.stop(0); } catch(e){}
+    });
+    this.oscs = [];
+    if (this.ctx && this.ctx.state !== 'closed') {
+      this.ctx.close();
+    }
+    this.ctx = null;
+  }
+}
 
 interface PsychologyPageProps {
   language: 'fa' | 'en';
@@ -25,6 +172,350 @@ export function PsychologyPage({ language, onNavigate }: PsychologyPageProps) {
   const [showLockModal, setShowLockModal] = useState(false);
 
   const isVip = profile.isActivated && (profile.subscriptionTier === 'vip' || profile.subscriptionTier === 'premium');
+
+  // Audio Player States
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [duration, setDuration] = useState<number>(1125); // total duration (18:45)
+  const [playbackRate, setPlaybackRate] = useState<number>(1);
+  const [volume, setVolume] = useState<number>(0.8);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [currentChapterIndex, setCurrentChapterIndex] = useState<number>(0);
+  const [customAudioSrc, setCustomAudioSrc] = useState<string | null>('/podcast.mp3');
+  const [customAudioName, setCustomAudioName] = useState<string | null>('NeuroTrader_Podcast_Summary.mp3');
+  const [enableBinaural, setEnableBinaural] = useState<boolean>(false);
+
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const synthRef = useRef<AmbientWebSynth | null>(null);
+  const progressIntervalRef = useRef<any>(null);
+
+  // Web Audio API refs for visualizer & analysis
+  const audioContextRef = useRef<AudioContext | null>(null);
+  const analyserRef = useRef<AnalyserNode | null>(null);
+  const sourceNodeRef = useRef<MediaElementAudioSourceNode | null>(null);
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+
+  // Initializing static Pacings for SoundCloud-style representation
+  const staticWaveform = [
+    12, 18, 25, 35, 42, 22, 18, 30, 48, 62, 55, 38, 25, 18, 28, 45, 60, 75, 48, 32,
+    20, 15, 26, 42, 58, 70, 78, 65, 45, 30, 22, 18, 30, 48, 68, 75, 62, 45, 35, 26,
+    18, 12, 18, 30, 52, 65, 78, 85, 70, 50, 35, 22, 15, 24, 40, 55, 62, 45, 20, 12
+  ];
+
+  // Initialize Web Audio configuration safely on play gesture
+  const initWebAudio = () => {
+    if (!audioRef.current) return;
+    try {
+      if (!audioContextRef.current) {
+        const AudioContextClass = window.AudioContext || (window as any).webkitAudioContext;
+        audioContextRef.current = new AudioContextClass();
+      }
+      const ctx = audioContextRef.current;
+      if (ctx.state === 'suspended') {
+        ctx.resume();
+      }
+      
+      if (!analyserRef.current) {
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 64; // nice small size for visualizer
+        analyserRef.current = analyser;
+      }
+      
+      if (!sourceNodeRef.current && audioRef.current) {
+        const src = audioRef.current.src || '';
+        const isSameOrigin = src.startsWith('/') || src.startsWith(window.location.origin);
+        if (!isSameOrigin && src.startsWith('http') && !src.includes('localhost') && !src.includes('127.0.0.1')) {
+          audioRef.current.crossOrigin = 'anonymous';
+        }
+        const source = ctx.createMediaElementSource(audioRef.current);
+        source.connect(analyserRef.current);
+        analyserRef.current.connect(ctx.destination);
+        sourceNodeRef.current = source;
+      }
+    } catch (err) {
+      console.warn("Web Audio API Connection failed, run simulation fallback:", err);
+    }
+  };
+
+  // Real-time Web Audio API Animating Spectrograph Canvas Runner
+  useEffect(() => {
+    if (!isPlaying) {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      return;
+    }
+
+    // Try starting context or fallback
+    initWebAudio();
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    const analyser = analyserRef.current;
+    const bufferLength = analyser ? analyser.frequencyBinCount : 32;
+    const dataArray = new Uint8Array(bufferLength);
+
+    const draw = () => {
+      animationFrameRef.current = requestAnimationFrame(draw);
+
+      const width = canvas.width;
+      const height = canvas.height;
+      ctx.clearRect(0, 0, width, height);
+
+      if (analyser) {
+        analyser.getByteFrequencyData(dataArray);
+      } else {
+        // Multi-frequency biological wave pulse simulation
+        for (let i = 0; i < bufferLength; i++) {
+          const timeFactor = Date.now() * 0.005;
+          dataArray[i] = Math.max(
+            8,
+            Math.sin(i * 0.35 + timeFactor) * 60 + 
+            Math.cos(i * 0.15 - timeFactor * 1.8) * 40 + 
+            65 + 
+            Math.random() * 20
+          ) * volume * (isMuted ? 0 : 1);
+        }
+      }
+
+      // Render high-fidelity premium visual bands
+      const barWidth = (width / bufferLength) * 1.25;
+      let barHeight;
+      let x = 0;
+
+      for (let i = 0; i < bufferLength; i++) {
+        barHeight = (dataArray[i] / 255) * height * 0.9;
+
+        // Custom linear multicolor styling
+        const gradient = ctx.createLinearGradient(0, height, 0, height - barHeight);
+        gradient.addColorStop(0, 'rgba(245, 158, 11, 0.08)'); // glowing base
+        gradient.addColorStop(0.5, 'rgba(56, 189, 248, 0.65)'); // sky cyan
+        gradient.addColorStop(1, 'rgba(245, 158, 11, 0.95)'); // sharp gold head
+
+        ctx.fillStyle = gradient;
+        ctx.shadowBlur = 4;
+        ctx.shadowColor = 'rgba(245, 158, 11, 0.25)';
+
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(x, height - barHeight, barWidth - 1.5, barHeight, 1.5);
+        } else {
+          ctx.rect(x, height - barHeight, barWidth - 1.5, barHeight);
+        }
+        ctx.fill();
+
+        x += barWidth;
+      }
+    };
+
+    draw();
+
+    return () => {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+    };
+  }, [isPlaying, volume, isMuted, customAudioSrc]);
+
+  // Interactive Waveform Drag, Move and Click Seeker Controls
+  const handleWaveformClick = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const width = rect.width;
+    const percentage = Math.max(0, Math.min(1, clickX / width));
+    const targetTime = percentage * duration;
+    
+    setCurrentTime(targetTime);
+    if (audioRef.current) {
+      audioRef.current.currentTime = targetTime;
+    }
+  };
+
+  const handleWaveformMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (e.buttons === 1) { // Left mouse button hold down dragging
+      const rect = e.currentTarget.getBoundingClientRect();
+      const clickX = e.clientX - rect.left;
+      const width = rect.width;
+      const percentage = Math.max(0, Math.min(1, clickX / width));
+      const targetTime = percentage * duration;
+      
+      setCurrentTime(targetTime);
+      if (audioRef.current) {
+        audioRef.current.currentTime = targetTime;
+      }
+    }
+  };
+
+  // Initialize synth on demand
+  const getSynth = () => {
+    if (!synthRef.current) {
+      synthRef.current = new AmbientWebSynth();
+    }
+    return synthRef.current;
+  };
+
+  // Start/Stop synthesiser based on enableBinaural toggle state and playback state dynamically
+  useEffect(() => {
+    if (isPlaying && enableBinaural) {
+      try {
+        const synth = getSynth();
+        synth.start();
+        synth.setVolume(isMuted ? 0 : volume);
+      } catch (err) {
+        console.warn("Could not start binaural synth background:", err);
+      }
+    } else {
+      if (synthRef.current) {
+        try {
+          synthRef.current.stop();
+        } catch (err) {
+          console.warn("Could not stop binaural synth cleanly:", err);
+        }
+      }
+    }
+  }, [enableBinaural, isPlaying, volume, isMuted]);
+
+  // Sync volume changes
+  useEffect(() => {
+    const activeVolume = isMuted ? 0 : volume;
+    if (audioRef.current) {
+      audioRef.current.volume = activeVolume;
+    }
+    if (synthRef.current && enableBinaural && isPlaying) {
+      synthRef.current.setVolume(activeVolume);
+    }
+  }, [volume, isMuted, enableBinaural, isPlaying]);
+
+  // Sync playback speed changes
+  useEffect(() => {
+    if (audioRef.current) {
+      audioRef.current.playbackRate = playbackRate;
+    }
+  }, [playbackRate]);
+
+  // Track chapter based on current time
+  useEffect(() => {
+    const chapterIndex = podcastChapters.findIndex(
+      ch => currentTime >= ch.startTime && currentTime <= ch.endTime
+    );
+    if (chapterIndex !== -1 && chapterIndex !== currentChapterIndex) {
+      setCurrentChapterIndex(chapterIndex);
+    }
+  }, [currentTime, currentChapterIndex]);
+
+  // Playback Toggle Trigger (pure speaker speech, optionally matches binaural oscillations)
+  const handlePlayPause = () => {
+    if (isPlaying) {
+      // Pause
+      if (audioRef.current) {
+        audioRef.current.pause();
+      }
+      setIsPlaying(false);
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    } else {
+      // Play
+      setIsPlaying(true);
+      
+      // Play podcast audio/soundtrack file
+      if (audioRef.current) {
+        audioRef.current.play().catch(e => console.warn("Audio play failed", e));
+      }
+
+      // Seamlessly keep time & visual synchronized
+      if (progressIntervalRef.current) clearInterval(progressIntervalRef.current);
+      progressIntervalRef.current = setInterval(() => {
+        if (audioRef.current) {
+          setCurrentTime(audioRef.current.currentTime);
+          if (audioRef.current.duration) {
+            setDuration(audioRef.current.duration);
+          }
+        }
+      }, 300);
+    }
+  };
+
+  // Skip Chapter Forward/Backward
+  const handleNextChapter = () => {
+    const nextIdx = Math.min(podcastChapters.length - 1, currentChapterIndex + 1);
+    const targetTime = podcastChapters[nextIdx].startTime;
+    setCurrentTime(targetTime);
+    if (audioRef.current) {
+      audioRef.current.currentTime = targetTime;
+    }
+  };
+
+  const handlePrevChapter = () => {
+    const prevIdx = Math.max(0, currentChapterIndex - 1);
+    const targetTime = podcastChapters[prevIdx].startTime;
+    setCurrentTime(targetTime);
+    if (audioRef.current) {
+      audioRef.current.currentTime = targetTime;
+    }
+  };
+
+  // Restart / Reset
+  const handleRestart = () => {
+    setCurrentTime(0);
+    if (audioRef.current) {
+      audioRef.current.currentTime = 0;
+    }
+  };
+
+  // Drag and drop or input file change handler
+  const handleAudioFileChange = (file: File) => {
+    if (file) {
+      const src = URL.createObjectURL(file);
+      setCustomAudioSrc(src);
+      setCustomAudioName(file.name);
+      setIsPlaying(false);
+      setCurrentTime(0);
+      if (synthRef.current) {
+        synthRef.current.stop();
+      }
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+        progressIntervalRef.current = null;
+      }
+    }
+  };
+
+  // Clean-up refs on destroy
+  useEffect(() => {
+    return () => {
+      if (synthRef.current) {
+        synthRef.current.stop();
+      }
+      if (progressIntervalRef.current) {
+        clearInterval(progressIntervalRef.current);
+      }
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
+      }
+      if (audioContextRef.current && audioContextRef.current.state !== 'closed') {
+        audioContextRef.current.close().catch(e => console.warn("Teardown ctx failed:", e));
+        audioContextRef.current = null;
+      }
+      sourceNodeRef.current = null;
+      analyserRef.current = null;
+    };
+  }, []);
+
+  const formatAudioTime = (secs: number) => {
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`;
+  };
 
   useEffect(() => {
     setProfile(StorageManager.getProfile());
@@ -324,9 +815,276 @@ Danger signals:
       {/* RESPONSIVE LAYOUT CONTAINER */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
         
-        {/* LEFT COLUMN: Why mind control is vital intro card */}
+        {/* LEFT COLUMN: Why mind control is vital & NeuroTrader Podcast Player */}
         <div className="lg:col-span-5 space-y-6">
           
+          {/* COMPACT STYLISH PODCAST PLAYER */}
+          <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-tr from-[#0b131e]/70 via-[#0a111a]/60 to-[#050b13]/50 border border-white/5 relative overflow-hidden space-y-5 backdrop-blur-xl">
+            <style>{`
+              @keyframes bounceSynth {
+                0% { transform: scaleY(0.25); }
+                100% { transform: scaleY(1); }
+              }
+            `}</style>
+            
+            {/* Embedded native audio tag for custom file upload */}
+            <audio 
+              ref={audioRef}
+              src={customAudioSrc || undefined}
+              onTimeUpdate={() => {
+                if (customAudioSrc && audioRef.current) {
+                  setCurrentTime(audioRef.current.currentTime);
+                }
+              }}
+              onLoadedMetadata={() => {
+                if (customAudioSrc && audioRef.current) {
+                  setDuration(audioRef.current.duration);
+                }
+              }}
+              onEnded={() => {
+                setIsPlaying(false);
+                setCurrentTime(0);
+              }}
+            />
+
+            <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/[0.03] rounded-full filter blur-2xl pointer-events-none" />
+            <div className="absolute -bottom-10 -left-10 w-44 h-44 bg-cyan-500/[0.02] rounded-full filter blur-3xl pointer-events-none" />
+
+            {/* Header: Title and Loader options */}
+            <div className="flex justify-between items-start pb-3.5 border-b border-white/5">
+              <div className="space-y-1">
+                <span className="text-[9px] font-black text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-lg uppercase tracking-wider">
+                  {language === 'fa' ? '📻 پادکست رادیو روانشناسی' : '📻 Psychology Audio Podcast'}
+                </span>
+                <h3 className="text-xs font-black text-white tracking-wide uppercase mt-1">
+                  {language === 'fa' ? 'خلاصه صوتی کتاب نوروتریدر' : 'NeuroTrader Book Podcast'}
+                </h3>
+                <p className="text-[10px] text-slate-400">
+                  {language === 'fa' ? 'مدرس: دکتر بهزاد قربانی' : 'Author: Dr. Behzad Ghorbani'}
+                </p>
+              </div>
+
+              {/* Loader Button */}
+              <label className="text-[9.5px] font-bold text-slate-400 hover:text-white transition-all cursor-pointer flex items-center gap-1.5 bg-white/5 px-2.5 py-1.5 rounded-xl border border-white/5 active:scale-95 shadow-lg select-none">
+                <Upload className="w-3.5 h-3.5 text-amber-400" />
+                <span>{customAudioName ? (customAudioName.length > 12 ? customAudioName.substring(0, 9) + '...' : customAudioName) : (language === 'fa' ? 'لود پادکست' : 'Upload File')}</span>
+                <input 
+                  type="file" 
+                  accept="audio/*,video/*" 
+                  className="hidden" 
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) handleAudioFileChange(file);
+                  }}
+                />
+              </label>
+            </div>
+
+            {/* Disk art & Active chapter waveform */}
+            <div className="flex gap-4 items-center p-3.5 bg-white/[0.02] border border-white/5 rounded-2xl">
+              
+              {/* Onigama Disc Cover art */}
+              <div className="relative w-16 h-16 shrink-0 rounded-2xl bg-gradient-to-tr from-slate-900 via-[#07101a] to-[#040810] border border-white/10 overflow-hidden flex items-center justify-center shadow-lg">
+                <div className="absolute inset-0 bg-radial-gradient from-blue-500/20 to-transparent pointer-events-none" />
+                
+                <motion.div 
+                  animate={{ rotate: isPlaying ? 360 : 0 }}
+                  transition={{ repeat: Infinity, duration: 8, ease: "linear" }}
+                  className="w-12 h-12 rounded-full border border-slate-700/50 flex items-center justify-center relative shadow-[0_0_12px_rgba(59,130,246,0.3)] bg-[#020509]"
+                >
+                  <div className="absolute inset-1 rounded-full border border-dashed border-sky-500/40" />
+                  <Headphones className="w-5 h-5 text-amber-400 relative z-10" />
+                  <div className="absolute top-0 right-1 w-2 h-2 bg-sky-400 rounded-full shadow-[0_0_8px_#38bdf8]" />
+                </motion.div>
+              </div>
+
+              {/* Active Chapter name & visualizer */}
+              <div className="flex-1 min-w-0 space-y-1.5">
+                <span className="text-[8px] font-black text-sky-400 tracking-widest uppercase block">
+                  {language === 'fa' ? `بخش ${currentChapterIndex + 1} از ۵` : `CHAPTER ${currentChapterIndex + 1} OF 5`}
+                </span>
+                <p className="text-[11.5px] font-extrabold text-slate-200 uppercase tracking-wide truncate">
+                  {language === 'fa' ? podcastChapters[currentChapterIndex].title.fa : podcastChapters[currentChapterIndex].title.en}
+                </p>
+                
+                {/* Real-time Web Audio API Spectrograph frequency visualizer */}
+                <div className="h-5 w-full pt-0.5 overflow-hidden relative">
+                  <canvas 
+                    ref={canvasRef} 
+                    className="w-full h-full opacity-90"
+                    width={180}
+                    height={20}
+                  />
+                </div>
+              </div>
+
+            </div>
+
+            {/* Interactive Tactile Waveform Progress Bar */}
+            <div className="space-y-2 mt-1 select-none">
+              <div className="relative group p-1 bg-white/[0.01] hover:bg-white/[0.02] border border-white/[0.03] rounded-2xl transition-all">
+                <div 
+                  className="h-10 flex items-end justify-between gap-[2px] cursor-pointer relative"
+                  onClick={handleWaveformClick}
+                  onMouseMove={handleWaveformMouseMove}
+                >
+                  {staticWaveform.map((height, idx) => {
+                    const progressRatio = currentTime / (duration || 100);
+                    const activeIdx = Math.floor(progressRatio * staticWaveform.length);
+                    const isActive = idx === activeIdx;
+                    const isCompleted = idx < activeIdx;
+                    
+                    return (
+                      <div
+                        key={idx}
+                        className="flex-1 rounded-t-sm transition-all duration-150"
+                        style={{
+                          height: `${height}%`,
+                          background: isCompleted
+                            ? 'linear-gradient(to top, rgba(245, 158, 11, 0.8), rgba(251, 191, 36, 0.95))'
+                            : isActive && isPlaying
+                              ? 'linear-gradient(to top, rgba(56, 189, 248, 0.9), rgba(14, 165, 233, 1))'
+                              : 'rgba(71, 85, 105, 0.45)',
+                          boxShadow: isCompleted
+                            ? '0 0 3px rgba(245, 158, 11, 0.15)'
+                            : isActive && isPlaying
+                              ? '0 0 6px rgba(56, 189, 248, 0.5)'
+                              : 'none',
+                          transform: isActive && isPlaying ? 'scaleY(1.15) translateY(-2px)' : 'none',
+                        }}
+                      />
+                    );
+                  })}
+                </div>
+                
+                {/* Drag-for-seeking instruction on hover */}
+                <div className="absolute -top-6 left-1/2 transform -translate-x-1/2 bg-[#121b26] text-white border border-white/5 text-[8.5px] px-2 py-0.5 rounded shadow-lg pointer-events-none opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap tracking-wide">
+                  {language === 'fa' ? '🎛️ برای جلو/عقب کشیدن کلیک کنید یا بکشید' : '🎛️ Click or Drag to Scrub Timeline'}
+                </div>
+              </div>
+              
+              <div className="flex justify-between items-center text-[10px] font-mono text-slate-500 font-bold px-1">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 bg-amber-500 rounded-full animate-ping" style={{ display: isPlaying ? 'inline-block' : 'none' }} />
+                  <span className="text-slate-400">{formatAudioTime(currentTime)}</span>
+                </span>
+                <span className="text-slate-500">{formatAudioTime(duration)}</span>
+              </div>
+            </div>
+
+            {/* Audiophile player dashboard controls */}
+            <div className="flex justify-between items-center bg-black/40 p-2 rounded-2xl border border-white/5 font-sans">
+              
+              {/* Playback rate speed selector */}
+              <div className="flex items-center gap-1">
+                {[1, 1.25, 1.5, 2].map((rate) => (
+                  <button
+                    key={rate}
+                    type="button"
+                    onClick={() => setPlaybackRate(rate)}
+                    className={`w-7 h-7 rounded-lg text-[9px] font-black transition-all cursor-pointer ${
+                      playbackRate === rate 
+                        ? 'bg-amber-500/20 text-amber-400 border border-amber-500/30'
+                        : 'text-slate-500 hover:text-slate-300'
+                    }`}
+                  >
+                    {rate}x
+                  </button>
+                ))}
+              </div>
+
+              {/* Main control buttons */}
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={handlePrevChapter}
+                  className="p-1.5 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-all cursor-pointer"
+                  title={language === 'fa' ? 'فصل قبلی' : 'Previous chapter'}
+                >
+                  <ChevronLeft className={`w-4 h-4 ${language === 'fa' ? 'transform rotate-180' : ''}`} />
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handlePlayPause}
+                  className="w-10 h-10 rounded-full bg-amber-500 hover:bg-amber-400 text-slate-950 flex items-center justify-center transition-all cursor-pointer shadow-[0_0_15px_rgba(245,158,11,0.3)] font-bold active:scale-95 animate-pulse"
+                >
+                  {isPlaying ? <Pause className="w-5 h-5 fill-slate-950" /> : <Play className="w-5 h-5 fill-slate-950 ml-0.5" />}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={handleNextChapter}
+                  className="p-1.5 rounded-xl hover:bg-white/5 text-slate-400 hover:text-white transition-all cursor-pointer"
+                  title={language === 'fa' ? 'فصل بعدی' : 'Next chapter'}
+                >
+                  <ChevronRight className={`w-4 h-4 ${language === 'fa' ? 'transform rotate-180' : ''}`} />
+                </button>
+              </div>
+
+              {/* Volume sliders */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={() => setIsMuted(!isMuted)}
+                  className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/5 transition-all cursor-pointer"
+                >
+                  {isMuted ? <VolumeX className="w-4 h-4 text-rose-450" /> : <Volume2 className="w-4 h-4 text-amber-400" />}
+                </button>
+                <input 
+                  type="range"
+                  min={0}
+                  max={1}
+                  step={0.05}
+                  value={volume}
+                  onChange={(e) => {
+                    setVolume(parseFloat(e.target.value) || 0.8);
+                    setIsMuted(false);
+                  }}
+                  className="w-12 h-1 bg-white/10 rounded-lg appearance-none cursor-pointer accent-amber-500"
+                />
+              </div>
+
+            </div>
+
+            {/* Ambient Alpha Beat frequency toggle switch */}
+            <div className="flex justify-between items-center bg-white/[0.015] hover:bg-white/[0.03] duration-150 p-2.5 px-3 rounded-2xl border border-white/[0.04]">
+              <div className="flex items-center gap-2.5">
+                <Brain className={`w-4 h-4 text-sky-450 ${enableBinaural && isPlaying ? 'animate-pulse' : ''}`} />
+                <div className="flex flex-col text-left">
+                  <span className="text-[10px] font-bold text-slate-200">
+                    {language === 'fa' ? 'فرکانس پس‌زمینه (امواج آلفا دوگوشی)' : 'Binaural Alpha Wave Background'}
+                  </span>
+                  <span className="text-[8.5px] text-slate-400">
+                    {language === 'fa' ? 'امواج شبیه‌ساز مغزی (پیش‌فرض خاموش)' : 'Enhances focus & calms the mind (disabled by default)'}
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEnableBinaural(!enableBinaural)}
+                className={`text-[9.5px] font-black p-1.5 px-3 rounded-xl transition-all cursor-pointer ${
+                  enableBinaural 
+                    ? 'bg-sky-500/20 text-sky-400 border border-sky-500/30 shadow-[0_0_8px_rgba(56,189,248,0.2)] animate-pulse'
+                    : 'bg-white/5 text-slate-400 border border-white/5 hover:text-slate-200'
+                }`}
+              >
+                {enableBinaural ? (language === 'fa' ? 'روشن' : 'ENABLED') : (language === 'fa' ? 'خاموش' : 'DISABLED')}
+              </button>
+            </div>
+
+            {/* Chapters active details description (Bilingual, matches high edification) */}
+            <div className="p-3 bg-white/[0.015] border border-white/5 rounded-2xl relative space-y-1">
+              <div className="flex items-center gap-1.5 text-[9.5px] text-amber-300 font-extrabold uppercase">
+                <Bookmark className="w-3.5 h-3.5 text-amber-400" />
+                <span>{language === 'fa' ? 'شرح موضوعی این بخش:' : 'Chapter Core Concept:'}</span>
+              </div>
+              <p className="text-[10.5px] text-slate-300 leading-relaxed font-medium">
+                {language === 'fa' ? podcastChapters[currentChapterIndex].summary.fa : podcastChapters[currentChapterIndex].summary.en}
+              </p>
+            </div>
+          </div>
+
           {/* CORE INTRO INTRO CARD */}
           <div className="p-5 rounded-3xl glass-card border border-white/5 relative overflow-hidden space-y-4">
             <div className="absolute top-0 right-0 w-24 h-24 bg-[#6f87a0]/5 rounded-full blur-[30px] pointer-events-none" />

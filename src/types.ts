@@ -12,6 +12,18 @@ export interface Signal {
   notes?: string;
   session?: 'ASIA' | 'LONDON' | 'NY';
   strategy?: 'SMC' | 'LIT';
+  rsi?: number;
+  ema9?: number;
+  ema21?: number;
+  support?: number;
+  resistance?: number;
+  bosPrice?: number;
+  chochPrice?: number;
+  obPrice?: number;
+  sweepPrice?: number;
+  fvgPrice?: number;
+  isRealData?: boolean;
+  qualityScore?: number;
 }
 
 export interface Trade {
@@ -59,5 +71,24 @@ export interface UserProfile {
   subscriptionTier: 'free' | 'premium' | 'vip';
   activationKey: string;
   isActivated: boolean;
+  deviceId?: string;
+}
+
+export interface MarketCandle {
+  timestamp: number; // in seconds
+  open: number;
+  high: number;
+  low: number;
+  close: number;
+  volume: number;
+}
+
+export interface AnalyticsData {
+  totalReceived: number;
+  totalAiReplies: number;
+  totalAgentReplies: number;
+  satisfactionRate: number;
+  volumeHistory: Array<{ date: string; customer: number; ai: number }>;
+  categoryHits: Array<{ name: string; value: number }>;
 }
 

@@ -69,12 +69,14 @@ export function BottomNavigation({ activeTab, setActiveTab, language }: BottomNa
               )}
               
               <IconComponent 
-                className={`w-5 h-5 mb-1 transition-transform duration-300 ${
-                  isActive ? 'stroke-[2.5px] text-[#6f87a0]' : 'stroke-[1.8px]'
+                className={`w-5 h-5 mb-0.5 sm:mb-1 transition-transform duration-300 ${
+                  isActive ? 'stroke-[2.5px] text-[#6f87a0] scale-110' : 'stroke-[1.8px]'
                 }`} 
               />
               
-              <span className="text-[10px] tracking-wide uppercase transition-all duration-300 select-none">
+              <span className={`text-[10px] tracking-wide transition-all duration-300 select-none ${
+                isActive ? 'block text-xs font-black' : 'hidden sm:block text-slate-400'
+              }`}>
                 {tab.label}
               </span>
 

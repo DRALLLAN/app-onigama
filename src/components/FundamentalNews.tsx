@@ -1788,14 +1788,17 @@ export function FundamentalNews({ language, selectedSymbol: parentSelectedSymbol
             setActiveModule('CALENDAR');
             triggerLiveBeep();
           }}
-          className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-xs font-black tracking-widest transition-all cursor-pointer ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl text-xs font-black tracking-wider sm:tracking-widest transition-all cursor-pointer ${
             activeModule === 'CALENDAR'
               ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-500/10'
               : 'text-slate-400 hover:text-slate-100'
           }`}
         >
-          <Calendar className="w-4 h-4" />
-          <span>{language === 'fa' ? '📅 تقویم اقتصادی و اخبار زمان‌بندی شده' : '📅 ECONOMIC CALENDAR INDEX'}</span>
+          <Calendar className="w-3.5 h-3.5 shrink-0" />
+          <span>
+            <span className="inline md:hidden">{language === 'fa' ? '📅 تقویم اقتصادی' : '📅 CALENDAR'}</span>
+            <span className="hidden md:inline">{language === 'fa' ? '📅 تقویم اقتصادی و اخبار زمان‌بندی شده' : '📅 ECONOMIC CALENDAR INDEX'}</span>
+          </span>
         </button>
         <button
           type="button"
@@ -1803,17 +1806,20 @@ export function FundamentalNews({ language, selectedSymbol: parentSelectedSymbol
             setActiveModule('LIVENEWS');
             triggerLiveBeep();
           }}
-          className={`flex-1 flex items-center justify-center gap-2 py-3.5 rounded-xl text-xs font-black tracking-widest transition-all cursor-pointer relative ${
+          className={`flex-1 flex items-center justify-center gap-1.5 py-3 rounded-xl text-xs font-black tracking-wider sm:tracking-widest transition-all cursor-pointer relative ${
             activeModule === 'LIVENEWS'
               ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-xl shadow-blue-500/10'
               : 'text-slate-400 hover:text-slate-100'
           }`}
         >
-          <span className="flex h-2 w-2 relative">
+          <span className="flex h-2 w-2 relative shrink-0">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
           </span>
-          <span>{language === 'fa' ? '📡 اتاق خبر زنده و پیام‌های فوری (Live)' : '📡 LIVE HEADLINES NEWSROOM'}</span>
+          <span>
+            <span className="inline md:hidden">{language === 'fa' ? '📡 خبر زنده' : '📡 LIVE NEWS'}</span>
+            <span className="hidden md:inline">{language === 'fa' ? '📡 اتاق خبر زنده و پیام‌های فوری (Live)' : '📡 LIVE HEADLINES NEWSROOM'}</span>
+          </span>
         </button>
       </div>
 

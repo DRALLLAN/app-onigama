@@ -14,6 +14,24 @@
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
+/* Glass Theme (Premium Cyber Glass) overrides */
+.theme-glass .glass-card {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(24px) !important;
+  -webkit-backdrop-filter: blur(24px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3) !important;
+}
+
+/* Dark Theme (Classic Charcoal) overrides */
+.theme-dark .glass-card {
+  background: #0c141f !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid rgba(111, 135, 160, 0.18) !important;
+  box-shadow: none !important;
+}
+
 .glow-emerald {
   box-shadow: 0 0 20px rgba(16, 185, 129, 0.2);
 }
@@ -103,12 +121,40 @@
   -webkit-backdrop-filter: blur(10px);
 }
 
+.theme-glass .onigama-card {
+  background: rgba(255, 255, 255, 0.04) !important;
+  backdrop-filter: blur(20px) !important;
+  -webkit-backdrop-filter: blur(20px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.12) !important;
+}
+
+.theme-dark .onigama-card {
+  background: #090e15 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid rgba(111, 135, 160, 0.15) !important;
+}
+
 .signal-card {
   background: rgba(9, 18, 29, 0.61);
   border: 1px solid rgba(111, 135, 160, 0.25);
   border-radius: 16px;
   padding: 20px;
   transition: all 0.3s ease;
+}
+
+.theme-glass .signal-card {
+  background: rgba(255, 255, 255, 0.03) !important;
+  backdrop-filter: blur(12px) !important;
+  -webkit-backdrop-filter: blur(12px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.theme-dark .signal-card {
+  background: #080d14 !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  border: 1px solid rgba(111, 135, 160, 0.15) !important;
 }
 
 .signal-card:hover {

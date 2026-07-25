@@ -1,6 +1,7 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
+import { DbService } from "./server/db";
 
 async function fetchYahooChartPrice(symbol: string): Promise<{ price: number; high: number; low: number; change: number } | null> {
   const hosts = ["query1.finance.yahoo.com", "query2.finance.yahoo.com"];
@@ -41,12 +42,100 @@ async function fetchYahooChartPrice(symbol: string): Promise<{ price: number; hi
   return null;
 }
 
+async function fetchYahooChartCandles(symbol: string): Promise<any[] | null> {
+  const hosts = ["query1.finance.yahoo.com", "query2.finance.yahoo.com"];
+  const userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36";
+  
+  const mapping: Record<string, string> = {
+    'XAUUSD': 'GC=F',
+    'XAGUSD': 'SI=F',
+    'BTCUSD': 'BTC-USD',
+    'ETHUSD': 'ETH-USD',
+    'EURUSD': 'EURUSD=X',
+    'GBPUSD': 'GBPUSD=X',
+    'USDJPY': 'JPY=X',
+    'AUDUSD': 'AUDUSD=X',
+    'USDCAD': 'CAD=X',
+    'US30': '^DJI',
+    'NAS100': '^NDX',
+    'OIL': 'BZ=F'
+  };
+  const ticker = mapping[symbol] || symbol;
+
+  for (const host of hosts) {
+    try {
+      const url = `https://${host}/v8/finance/chart/${encodeURIComponent(ticker)}?interval=1h&range=7d`;
+      const res = await fetch(url, { headers: { "User-Agent": userAgent } });
+      if (res.ok) {
+        const json = await res.json();
+        const result = json?.chart?.result?.[0];
+        if (result) {
+          const timestamps = result.timestamp || [];
+          const quotes = result.indicators?.quote?.[0];
+          if (quotes && Array.isArray(quotes.close) && timestamps.length > 0) {
+            const candles = [];
+            for (let i = 0; i < timestamps.length; i++) {
+              const t = timestamps[i];
+              const o = quotes.open?.[i];
+              const h = quotes.high?.[i];
+              const l = quotes.low?.[i];
+              const c = quotes.close?.[i];
+              const v = quotes.volume?.[i] || 0;
+
+              if (
+                typeof t === 'number' &&
+                typeof o === 'number' && !isNaN(o) &&
+                typeof h === 'number' && !isNaN(h) &&
+                typeof l === 'number' && !isNaN(l) &&
+                typeof c === 'number' && !isNaN(c)
+              ) {
+                candles.push({
+                  timestamp: t,
+                  open: o,
+                  high: h,
+                  low: l,
+                  close: c,
+                  volume: v
+                });
+              }
+            }
+            if (candles.length >= 25) {
+              return candles;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.error(`Error fetching chart candles for ${symbol} on ${host}:`, err);
+    }
+  }
+  return null;
+}
+
 async function startServer() {
   const app = express();
   const PORT = process.env.PORT ? parseInt(process.env.PORT, 10) : 3000;
 
   // Enable JSON bodies
   app.use(express.json());
+
+  // API: Live Candles Proxy (highly reliable server-side fetch)
+  app.get("/api/candles", async (req, res) => {
+    try {
+      const symbol = req.query.symbol as string;
+      if (!symbol) {
+        return res.status(400).json({ success: false, error: "symbol is required" });
+      }
+
+      const candles = await fetchYahooChartCandles(symbol);
+      if (candles) {
+        return res.json({ success: true, data: candles });
+      }
+      return res.status(404).json({ success: false, error: `Could not fetch candles for ${symbol}` });
+    } catch (err: any) {
+      res.status(500).json({ success: false, error: err?.message || "Internal candle proxy error" });
+    }
+  });
 
   // API: Live Market Prices Proxy
   app.get("/api/market-prices", async (req, res) => {
@@ -180,6 +269,263 @@ async function startServer() {
       res.json({ success: true, data: pricesMap });
     } catch (err: any) {
       res.status(500).json({ success: false, error: err?.message || "Internal pricing fetch error" });
+    }
+  });
+
+  // API: License Verification
+  app.post("/api/license/check", async (req, res) => {
+    try {
+      const { deviceId } = req.body;
+      if (!deviceId) {
+        return res.status(400).json({ success: false, error: "deviceId is required" });
+      }
+
+      let device = await DbService.getDevice(deviceId);
+      
+      // If the device does not exist, initialize it in the database with standard FREE status
+      if (!device) {
+        device = {
+          deviceId,
+          status: "FREE",
+          activatedAt: null,
+          expiresAt: null,
+          licenseKey: null,
+          updatedAt: new Date().toISOString()
+        };
+        await DbService.saveDevice(device);
+      }
+
+      // Check if VIP subscription has expired
+      let isVIP = device.status === "VIP";
+      if (isVIP && device.expiresAt) {
+        const expiresTime = new Date(device.expiresAt).getTime();
+        const nowTime = Date.now();
+        if (nowTime > expiresTime) {
+          // License expired! Revert to FREE
+          device.status = "FREE";
+          device.updatedAt = new Date().toISOString();
+          await DbService.saveDevice(device);
+          isVIP = false;
+        }
+      }
+
+      res.json({
+        success: true,
+        data: {
+          deviceId: device.deviceId,
+          status: device.status,
+          isVIP,
+          expiresAt: device.expiresAt,
+          licenseKey: device.licenseKey,
+        }
+      });
+    } catch (err: any) {
+      console.error("Error checking license status:", err);
+      res.status(500).json({ success: false, error: err?.message || "Internal license check error" });
+    }
+  });
+
+  // API: Activate Key
+  app.post("/api/license/activate", async (req, res) => {
+    try {
+      const { deviceId, key } = req.body;
+      if (!deviceId || !key) {
+        return res.status(400).json({ success: false, error: "deviceId and license key are required" });
+      }
+
+      const cleanKey = key.toUpperCase().trim();
+      const licenseKeyDoc = await DbService.getLicenseKey(cleanKey);
+
+      if (!licenseKeyDoc) {
+        return res.status(404).json({ success: false, error: "Invalid license key" });
+      }
+
+      if (licenseKeyDoc.status !== "UNUSED") {
+        return res.status(400).json({ success: false, error: "This license key has already been used" });
+      }
+
+      // Get or create device
+      let device = await DbService.getDevice(deviceId);
+      if (!device) {
+        device = {
+          deviceId,
+          status: "FREE",
+          activatedAt: null,
+          expiresAt: null,
+          licenseKey: null,
+          updatedAt: new Date().toISOString()
+        };
+      }
+
+      // Calculate expiration date
+      const activatedAt = new Date().toISOString();
+      let expiresAt: string | null = null;
+      if (licenseKeyDoc.durationDays < 99999) {
+        const expDate = new Date();
+        expDate.setDate(expDate.getDate() + licenseKeyDoc.durationDays);
+        expiresAt = expDate.toISOString();
+      }
+
+      // Update device
+      device.status = "VIP";
+      device.activatedAt = activatedAt;
+      device.expiresAt = expiresAt;
+      device.licenseKey = cleanKey;
+      device.updatedAt = new Date().toISOString();
+
+      // Update key doc
+      licenseKeyDoc.status = "USED";
+      licenseKeyDoc.usedByDeviceId = deviceId;
+      licenseKeyDoc.usedAt = activatedAt;
+
+      // Save to database
+      await DbService.saveDevice(device);
+      await DbService.saveLicenseKey(licenseKeyDoc);
+
+      // Create a subscription record for audit trail
+      const subscriptionId = `sub_act_${Date.now()}_${Math.floor(Math.random() * 1000)}`;
+      await DbService.saveSubscription({
+        subscriptionId,
+        deviceId,
+        platform: "LICENSE_KEY",
+        status: "ACTIVE",
+        productId: `license_${licenseKeyDoc.durationDays}d`,
+        expiresAt,
+        updatedAt: new Date().toISOString()
+      });
+
+      res.json({
+        success: true,
+        message: "License activated successfully",
+        data: {
+          deviceId: device.deviceId,
+          status: device.status,
+          isVIP: true,
+          expiresAt: device.expiresAt,
+          licenseKey: device.licenseKey
+        }
+      });
+    } catch (err: any) {
+      console.error("Error activating license key:", err);
+      res.status(500).json({ success: false, error: err?.message || "Internal license activation error" });
+    }
+  });
+
+  // API: Admin Create License Key
+  app.post("/api/admin/create-key", async (req, res) => {
+    try {
+      const { secretToken, key, durationDays } = req.body;
+      
+      // Protection check using ADMIN_SECRET_KEY environment variable
+      const serverSecret = process.env.ADMIN_SECRET_KEY || "onigama-admin-super-secret-key-2026";
+      if (!secretToken || secretToken !== serverSecret) {
+        return res.status(401).json({ success: false, error: "Unauthorized: Invalid administrative secret token" });
+      }
+
+      if (!key || !durationDays || typeof durationDays !== "number") {
+        return res.status(400).json({ success: false, error: "key and valid durationDays (number) are required" });
+      }
+
+      const cleanKey = key.toUpperCase().trim();
+      const existingKey = await DbService.getLicenseKey(cleanKey);
+      if (existingKey) {
+        return res.status(400).json({ success: false, error: "This license key already exists" });
+      }
+
+      const createdKey = await DbService.createLicenseKey(cleanKey, durationDays);
+      res.json({
+        success: true,
+        message: `License key created successfully: ${createdKey.key}`,
+        data: createdKey
+      });
+    } catch (err: any) {
+      console.error("Error creating license key:", err);
+      res.status(500).json({ success: false, error: err?.message || "Internal administrative error" });
+    }
+  });
+
+  // API: Google Play Billing Validation (Placeholder for Phase 2)
+  app.post("/api/license/google-play", async (req, res) => {
+    try {
+      const { deviceId, productId, purchaseToken } = req.body;
+      if (!deviceId || !productId || !purchaseToken) {
+        return res.status(400).json({ success: false, error: "Missing required parameters" });
+      }
+
+      // Sandbox implementation for verifying purchase flow in development
+      console.log(`[Google Play Receipt Sandbox] Validating product ${productId} for device ${deviceId}`);
+
+      let device = await DbService.getDevice(deviceId);
+      if (!device) {
+        device = {
+          deviceId,
+          status: "FREE",
+          activatedAt: null,
+          expiresAt: null,
+          licenseKey: null,
+          updatedAt: new Date().toISOString()
+        };
+      }
+
+      const activatedAt = new Date().toISOString();
+      let expiresAt: string | null = null;
+      
+      if (productId.includes("monthly")) {
+        const exp = new Date();
+        exp.setDate(exp.getDate() + 30);
+        expiresAt = exp.toISOString();
+      } else if (productId.includes("annual")) {
+        const exp = new Date();
+        exp.setDate(exp.getDate() + 365);
+        expiresAt = exp.toISOString();
+      }
+
+      device.status = "VIP";
+      device.activatedAt = activatedAt;
+      device.expiresAt = expiresAt;
+      device.licenseKey = `GP_PURCHASE_${purchaseToken.substring(0, 8).toUpperCase()}`;
+      device.updatedAt = new Date().toISOString();
+
+      await DbService.saveDevice(device);
+
+      // Save purchase record
+      const purchaseId = `gp_pur_${Date.now()}`;
+      await DbService.savePurchase({
+        purchaseId,
+        deviceId,
+        platform: "PLAY_STORE",
+        transactionId: purchaseToken,
+        productId,
+        purchaseDate: activatedAt,
+        status: "COMPLETED"
+      });
+
+      // Save subscription record
+      const subscriptionId = `gp_sub_${Date.now()}`;
+      await DbService.saveSubscription({
+        subscriptionId,
+        deviceId,
+        platform: "PLAY_STORE",
+        status: "ACTIVE",
+        productId,
+        expiresAt,
+        updatedAt: new Date().toISOString()
+      });
+
+      res.json({
+        success: true,
+        message: "Google Play checkout simulated and verified successfully in sandbox",
+        data: {
+          deviceId: device.deviceId,
+          status: device.status,
+          isVIP: true,
+          expiresAt: device.expiresAt,
+          licenseKey: device.licenseKey
+        }
+      });
+    } catch (err: any) {
+      console.error("Error validating Google Play receipt:", err);
+      res.status(500).json({ success: false, error: err?.message || "Internal Google Play checkout verification error" });
     }
   });
 

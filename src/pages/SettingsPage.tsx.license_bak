@@ -2,7 +2,6 @@ import { useState, useEffect, FormEvent, MouseEvent } from 'react';
 import { UserSettings, UserProfile } from '../types';
 import { StorageManager } from '../services/api';
 import { PlayBillingService, PLAY_STORE_PRODUCTS, PurchaseState } from '../services/billing';
-import { activateLicense, checkLicense } from '../utils/license';
 import { 
   Bell, 
   Volume2, 
@@ -102,27 +101,6 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
   const [isPWAInstalled, setIsPWAInstalled] = useState<boolean>(false);
   const [pwaPlatform, setPwaPlatform] = useState<'ios' | 'android' | 'desktop'>('android');
 
-  // چک خودکار وضعیت VIP از سرور موقع باز شدن صفحه
-  // سرور حرف آخر را می‌زند: اگر اشتراک منقضی شده یا localStorage دستکاری شده، اصلاح می‌شود
-  useEffect(() => {
-    (async () => {
-      try {
-        const status = await checkLicense(profile.fullName, profile.email);
-        if (status.tier !== profile.subscriptionTier || status.isActivated !== profile.isActivated) {
-          const updated: UserProfile = {
-            ...profile,
-            subscriptionTier: status.tier,
-            isActivated: status.isActivated,
-          };
-          setProfile(updated);
-          StorageManager.saveProfile(updated);
-        }
-      } catch (e) {
-        // اگر سرور در دسترس نبود، وضعیت فعلی حفظ می‌شود
-      }
-    })();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
   useEffect(() => {
     // Check display-mode to see if we are already inside the PWA shell
     if (window.matchMedia('(display-mode: standalone)').matches || (window.navigator as any).standalone) {
@@ -332,20 +310,23 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
     setTimeout(() => setShowProfileSuccess(false), 2000);
   };
 
-  const handleVerifyLicense = async () => {
+  const handleVerifyLicense = () => {
     const key = profile.activationKey.toUpperCase().trim();
     if (!key) {
       setActivationError(language === 'fa' ? 'لطفاً کد لایسنس را وارد کنید.' : 'Please enter a license key.');
       playFailureBuzz();
       return;
     }
-    // ارسال کد به سرور برای بررسی واقعی (نه چک محلی)
-    const result = await activateLicense(key);
-    if (result.ok) {
+
+    const vipKeys = ['VIP_PASS', 'BEHIMARAM_VIP', 'ONIGAMA_VIP', 'ALPHA_TEST_KEY', 'VIP_SPECIAL_ACCESS'];
+    const premiumKeys = ['GOLDEN_KEY', 'ONIGAMA2026', 'PRO_TESTER_99', 'ONIGAMA_GOLD_2026'];
+
+    if (vipKeys.includes(key) || premiumKeys.includes(key) || key === 'BEHIMARAM') {
+      const tier = premiumKeys.includes(key) ? 'premium' : 'vip';
       const updated: UserProfile = {
         ...profile,
         isActivated: true,
-        subscriptionTier: (result.tier as 'free' | 'premium' | 'vip') || 'vip'
+        subscriptionTier: tier
       };
       setProfile(updated);
       StorageManager.saveProfile(updated);
@@ -355,18 +336,29 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
       setTimeout(() => setActivationSuccess(false), 3000);
     } else {
       setActivationError(
-        language === 'fa'
-          ? ('❌ ' + (result.error || 'کد لایسنس نامعتبر است.'))
-          : ('❌ ' + (result.error || 'Invalid license key.'))
+        language === 'fa' 
+          ? '❌ لایسنس نامعتبر است! از کلیدهای آزمایشی مانند VIP_PASS یا GOLDEN_KEY استفاده کنید.' 
+          : '❌ Invalid Key! Try testing with VIP_PASS or GOLDEN_KEY.'
       );
       playFailureBuzz();
     }
   };
+
   const handleInstantUpgrade = () => {
-    // غیرفعال شد — این تابع قبلاً بدون پرداخت VIP رایگان می‌داد (حفره امنیتی)
-    setActivationError(language === 'fa' ? 'این قابلیت در دسترس نیست.' : 'This feature is not available.');
-    playFailureBuzz();
+    const updated: UserProfile = {
+      ...profile,
+      isActivated: true,
+      subscriptionTier: 'vip',
+      activationKey: 'VIP_PASS'
+    };
+    setProfile(updated);
+    StorageManager.saveProfile(updated);
+    setActivationError(null);
+    setActivationSuccess(true);
+    playVictoryCascade();
+    setTimeout(() => setActivationSuccess(false), 3000);
   };
+
   const handleDowngradeToFree = () => {
     const updated: UserProfile = {
       ...profile,
@@ -513,7 +505,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
               setDevClickCount(prev => {
                 const next = prev + 1;
                 if (next >= 5) {
-                  /* setDevModeActive(true); */ // غیرفعال شد - حفره امنیتی
+                  setDevModeActive(true);
                   playVictoryCascade();
                   return 0;
                 }
@@ -890,50 +882,31 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                   : 'On native Google Play Store devices, the buttons below trigger the official Google Play Billing system to register monthly/lifetime entitlements.'}
               </p>
               
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                {/* Product 1: Pro Monthly */}
-                <button
-                  type="button"
-                  onClick={() => handleInitiatePlayStorePurchase(PLAY_STORE_PRODUCTS.PRO_MONTHLY)}
-                  className="flex items-center justify-between p-2.5 bg-slate-900 hover:bg-slate-850 active:scale-95 transition-all text-left rounded-xl border border-sky-500/15 hover:border-sky-500/35 cursor-pointer group"
-                >
-                  <div className="space-y-0.5" dir="ltr">
-                    <span className="text-[10.5px] font-black text-sky-400 block group-hover:text-sky-300">
-                      {language === 'fa' ? 'PRO ماهانه' : 'PRO Monthly'}
-                    </span>
-                    <span className="text-[8.5px] text-slate-500 block">Product ID: onigama_pro_monthly</span>
-                  </div>
-                  <span className="text-[10px] font-bold font-mono text-white bg-sky-500/10 px-2 py-1 rounded-lg shrink-0">$4.99/mo</span>
-                </button>
-
-                {/* Product 2: Pro Annual */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                {/* Product 1: Pro Plan */}
                 <button
                   type="button"
                   onClick={() => handleInitiatePlayStorePurchase(PLAY_STORE_PRODUCTS.PRO_ANNUAL)}
                   className="flex items-center justify-between p-2.5 bg-slate-900 hover:bg-slate-850 active:scale-95 transition-all text-left rounded-xl border border-blue-500/15 hover:border-blue-500/35 cursor-pointer group"
                 >
                   <div className="space-y-0.5" dir="ltr">
-                    <span className="text-[10.5px] font-black text-blue-400 block group-hover:text-blue-300">
-                      {language === 'fa' ? 'PRO سالانه' : 'PRO Annual'}
-                    </span>
+                    <span className="text-[10.5px] font-black text-blue-400 block group-hover:text-blue-300">PRO Plan Annual</span>
                     <span className="text-[8.5px] text-slate-500 block">Product ID: onigama_pro_annual</span>
                   </div>
-                  <span className="text-[10px] font-bold font-mono text-white bg-blue-500/10 px-2 py-1 rounded-lg shrink-0">$49.99/yr</span>
+                  <span className="text-[10px] font-bold font-mono text-white bg-blue-500/10 px-2 py-1 rounded-lg shrink-0">$4.99/yr</span>
                 </button>
 
-                {/* Product 3: VIP Lifetime */}
+                {/* Product 2: VIP Lifetime */}
                 <button
                   type="button"
                   onClick={() => handleInitiatePlayStorePurchase(PLAY_STORE_PRODUCTS.VIP_LIFETIME)}
                   className="flex items-center justify-between p-2.5 bg-slate-900 hover:bg-slate-850 active:scale-95 transition-all text-left rounded-xl border border-yellow-500/15 hover:border-yellow-500/35 cursor-pointer group"
                 >
                   <div className="space-y-0.5" dir="ltr">
-                    <span className="text-[10.5px] font-black text-[#d9ac42] block group-hover:text-yellow-300 font-mono">
-                      {language === 'fa' ? 'VIP مادام‌العمر' : 'VIP Lifetime'}
-                    </span>
+                    <span className="text-[10.5px] font-black text-[#d9ac42] block group-hover:text-yellow-300 font-mono">VIP Crown Lifetime</span>
                     <span className="text-[8.5px] text-slate-500 block">Product ID: onigama_vip_lifetime_pack</span>
                   </div>
-                  <span className="text-[10px] font-bold font-mono text-white bg-amber-500/10 px-2 py-1 rounded-lg shrink-0">$99.99</span>
+                  <span className="text-[10px] font-bold font-mono text-white bg-amber-500/10 px-2 py-1 rounded-lg shrink-0">$12.99</span>
                 </button>
               </div>
             </div>
@@ -1645,9 +1618,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                       })()
                     ) : selectedProductId === PLAY_STORE_PRODUCTS.VIP_LIFETIME 
                       ? 'VIP Crown - Lifetime Access Package'
-                      : selectedProductId === PLAY_STORE_PRODUCTS.PRO_MONTHLY
-                        ? 'PRO Analytics Sub - Monthly Recurrent'
-                        : 'PRO Analytics Sub - 12 Months Recurrent'}
+                      : 'PRO Analytics Sub - 12 Months Recurrent'}
                   </span>
                 </div>
               </div>
@@ -1665,11 +1636,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                       }
                       return '$5.99';
                     })()
-                  ) : selectedProductId === PLAY_STORE_PRODUCTS.VIP_LIFETIME 
-                    ? '$99.99' 
-                    : selectedProductId === PLAY_STORE_PRODUCTS.PRO_MONTHLY 
-                      ? '$4.99' 
-                      : '$49.99'}
+                  ) : selectedProductId === PLAY_STORE_PRODUCTS.VIP_LIFETIME ? '$12.99' : '$4.99'}
                 </span>
               </div>
 
@@ -1707,7 +1674,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                     <div className="bg-[#2c2c2e] p-3 rounded-xl flex items-center justify-between border border-white/5 font-sans">
                       <div className="flex items-center gap-2">
                         <div className="w-11 h-6 bg-slate-950 rounded border border-white/10 flex items-center justify-center font-mono font-bold text-[8px] text-slate-400">G Pay</div>
-                        <span className="text-[11px] font-mono text-slate-300">{profile.email || 'user@example.com'}</span>
+                        <span className="text-[11px] font-mono text-slate-300">behimaram@gmail.com</span>
                       </div>
                       <span className="text-[10px] text-slate-500">Google Pay</span>
                     </div>

@@ -247,7 +247,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
 
       <div class="text-left font-mono text-[10.5px] text-slate-400 space-y-0.5 sm:text-right print-invert">
         <div><span class="text-slate-500">STATEMENT ID:</span> <span class="font-bold text-slate-200 print-invert">ONG-ST-${Date.now().toString().slice(-6)}</span></div>
-        <div><span class="text-slate-500">CLIENT EMAIL:</span> <span class="text-slate-250 print-invert">behimaram@gmail.com</span></div>
+        <div><span class="text-slate-500">CLIENT EMAIL:</span> <span class="text-slate-250 print-invert">${profile.email || 'N/A'}</span></div>
         <div><span class="text-slate-500">GENERATION TIME:</span> <span class="text-amber-400 font-bold">${new Date().toISOString()}</span></div>
         <div><span class="text-slate-500">SECURITY TIER:</span> <span class="text-emerald-400 font-bold">CLIENT SECURE SANDBOX</span></div>
       </div>
@@ -1013,7 +1013,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
 
                 <div className="text-left font-mono text-[10.5px] text-slate-400 space-y-0.5 sm:text-right">
                   <div><span className="text-slate-500">STATEMENT ID:</span> <span className="font-bold text-slate-200">ONG-ST-{Date.now().toString().slice(-6)}</span></div>
-                  <div><span className="text-slate-500">CLIENT EMAIL:</span> <span className="text-slate-200">behimaram@gmail.com</span></div>
+                  <div><span className="text-slate-500">CLIENT EMAIL:</span> <span className="text-slate-200">{profile.email || 'N/A'}</span></div>
                   <div><span className="text-slate-500">GENERATION TIME:</span> <span className="text-amber-400 font-bold">{new Date().toISOString()}</span></div>
                   <div><span className="text-slate-500">SECURITY TIER:</span> <span className="text-emerald-400 font-bold">CLIENT SECURE SANDBOX</span></div>
                 </div>

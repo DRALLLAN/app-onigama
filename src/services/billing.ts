@@ -1,11 +1,20 @@
+import { Purchases, LOG_LEVEL } from '@revenuecat/purchases-capacitor';
 import { StorageManager } from './api';
 import { UserProfile } from '../types';
+import { activateLicense, getDeviceId } from '../utils/license';
 
-// Standard Google Play Console Product IDs for Onigama App
+// Product IDs باید دقیقاً با Google Play Console و RevenueCat یکسان باشند
 export const PLAY_STORE_PRODUCTS = {
+  PRO_MONTHLY: 'onigama_pro_monthly',
   PRO_ANNUAL: 'onigama_pro_annual',
   VIP_LIFETIME: 'onigama_vip_lifetime_pack'
 };
+
+// کلید عمومی RevenueCat برای Google Play (از Project Settings -> API Keys)
+const REVENUECAT_API_KEY = 'goog_zNqIBtHVvNootJmeGcyFXEnrTfU';
+
+// نام Entitlement که در RevenueCat تعریف کرده‌ای (معمولا 'vip' یا 'pro')
+const ENTITLEMENT_ID = 'vip';
 
 export interface PurchaseState {
   isProcessing: boolean;
@@ -14,169 +23,172 @@ export interface PurchaseState {
   success: boolean;
 }
 
+let isConfigured = false;
+
 export const PlayBillingService = {
-  // Check if running on native Capacitor environment (Android/iOS)
   isNativeEnvironment(): boolean {
     const win = window as any;
-    return !!(win.Capacitor && win.Capacitor.platform !== 'web');
+    return !!(win.Capacitor && win.Capacitor.platform !== 'web' && win.Capacitor.isNativePlatform?.());
   },
 
-  // 1. Initialize Google Play Store Billing SDK
-  // In production with Capacitor / Cordova billing:
-  // We register products, configure validators, and setup transaction listeners.
-  initializeBilling(
+  // راه‌اندازی RevenueCat - باید یک‌بار در ابتدای اپ صدا زده شود
+  async initializeBilling(
     onPurchaseVerified: (tier: 'premium' | 'vip', method: string) => void,
     onStatusChange?: (text: string) => void
   ) {
-    const win = window as any;
-    
-    if (this.isNativeEnvironment() && (win.store || win.CdvPurchase)) {
-      try {
-        const store = win.CdvPurchase ? win.CdvPurchase.store : win.store;
-        if (!store) return;
+    if (!this.isNativeEnvironment()) {
+      console.log('محیط وب/مرورگر است؛ RevenueCat فقط روی اپ نصب‌شده کار می‌کند.');
+      return;
+    }
+    if (isConfigured) return;
 
-        onStatusChange?.('Initializing Google Play Billing Core...');
+    try {
+      onStatusChange?.('در حال راه‌اندازی سیستم پرداخت...');
 
-        // Register Subscription & Consumable Products
-        store.register([{
-          id: PLAY_STORE_PRODUCTS.PRO_ANNUAL,
-          type: store.PAID_SUBSCRIPTION
-        }, {
-          id: PLAY_STORE_PRODUCTS.VIP_LIFETIME,
-          type: store.NON_CONSUMABLE
-        }]);
+      await Purchases.setLogLevel({ level: LOG_LEVEL.ERROR });
 
-        // When a product is updated, loaded, or owned
-        store.when()
-          .approved((transaction: any) => {
-            onStatusChange?.('Purchase authorized! Verifying signatures...');
-            // In a real production environment, you should send the transaction object
-            // to a secure verification server. For clean client side fallback:
-            transaction.verify().then(() => {
-              transaction.finish();
-            });
-          })
-          .verified((receipt: any) => {
-            onStatusChange?.('Google Play signature verified! Activating...');
-            const id = receipt.id;
-            const tier = id === PLAY_STORE_PRODUCTS.VIP_LIFETIME ? 'vip' : 'premium';
-            
-            // Persist locally
-            const profile = StorageManager.getProfile();
-            const updated: UserProfile = {
-              ...profile,
-              isActivated: true,
-              subscriptionTier: tier,
-              activationKey: `PLAY_STORE_${id.toUpperCase()}`
-            };
-            StorageManager.saveProfile(updated);
-            onPurchaseVerified(tier, 'GOOGLE_PLAY_STORE');
-          })
-          .finished((transaction: any) => {
-            onStatusChange?.('Transaction finalize complete.');
-          });
+      const deviceId = await getDeviceId();
+      await Purchases.configure({
+        apiKey: REVENUECAT_API_KEY,
+        appUserID: deviceId, // همان شناسه دستگاه که در سیستم لایسنس خودمان استفاده می‌کنیم
+      });
 
-        // Initialize Store State Machine
-        store.initialize([store.GOOGLE_PLAY]);
-        onStatusChange?.('Google Play connections established');
-      } catch (err: any) {
-        console.error('PlayBilling Billing failure:', err);
-        onStatusChange?.('Billing initialization failure: ' + err.message);
-      }
-    } else {
-      console.log('Running in browser or sandbox simulator. Play Billing simulated.');
+      isConfigured = true;
+      onStatusChange?.('سیستم پرداخت آماده است.');
+
+      // چک وضعیت فعلی (اگر کاربر قبلا خریده، VIP فعال شود)
+      await this.syncEntitlements(onPurchaseVerified);
+    } catch (err: any) {
+      console.error('RevenueCat init error:', err);
+      onStatusChange?.('خطا در راه‌اندازی سیستم پرداخت: ' + err.message);
     }
   },
 
-  // 2. Perform checkout using Google Play
-  launchPlayCheckout(
+  // وضعیت فعلی Entitlement را از RevenueCat می‌خواند و در صورت VIP بودن، به سرور خودمان اطلاع می‌دهد
+  async syncEntitlements(onPurchaseVerified: (tier: 'premium' | 'vip', method: string) => void) {
+    try {
+      const info = await Purchases.getCustomerInfo();
+      const entitlement = info.customerInfo.entitlements.active[ENTITLEMENT_ID];
+      if (entitlement) {
+        const profile = StorageManager.getProfile();
+        const updated: UserProfile = {
+          ...profile,
+          isActivated: true,
+          subscriptionTier: 'vip',
+        };
+        StorageManager.saveProfile(updated);
+        onPurchaseVerified('vip', 'GOOGLE_PLAY_STORE');
+      }
+    } catch (err) {
+      console.error('syncEntitlements error:', err);
+    }
+  },
+
+  // خرید واقعی از Google Play
+  async launchPlayCheckout(
     productId: string,
     onProgress: (status: PurchaseState) => void,
     onComplete: (updatedProfile: UserProfile) => void
   ) {
-    const isVip = productId === PLAY_STORE_PRODUCTS.VIP_LIFETIME;
-    const tier = isVip ? 'vip' : 'premium';
-    const win = window as any;
+    if (!this.isNativeEnvironment()) {
+      onProgress({
+        isProcessing: false,
+        statusText: '',
+        error: 'خرید فقط در اپ نصب‌شده روی اندروید امکان‌پذیر است.',
+        success: false
+      });
+      return;
+    }
 
     onProgress({
       isProcessing: true,
-      statusText: 'Connecting to Google Play Store commerce APIs...',
+      statusText: 'در حال اتصال به فروشگاه گوگل پلی...',
       error: null,
       success: false
     });
 
-    // Native checkout if plugin is present
-    if (this.isNativeEnvironment() && (win.CdvPurchase || win.store)) {
-      try {
-        const store = win.CdvPurchase ? win.CdvPurchase.store : win.store;
-        if (store) {
-          onProgress({
-            isProcessing: true,
-            statusText: 'Opening Google Play native subscription sheet...',
-            error: null,
-            success: false
-          });
-          store.order(productId);
-          return;
-        }
-      } catch (err: any) {
-        onProgress({
-          isProcessing: false,
-          statusText: 'Plugin commerce failed. Launching elegant visual checkout mockup.',
-          error: err.message,
-          success: false
-        });
+    try {
+      // گرفتن لیست محصولات موجود از RevenueCat
+      const offerings = await Purchases.getOfferings();
+      const currentOffering = offerings.current;
+      if (!currentOffering) {
+        throw new Error('هیچ بسته‌ای در حال حاضر در دسترس نیست.');
       }
-    }
 
-    // High fidelity browser / simulator flow:
-    // This perfectly mirrors Google Play's real transactional round-trips for high-precision UX reviews!
-    let progressIdx = 0;
-    const steps = [
-      { t: 400, s: 'Contacting play.google.com billing servers...' },
-      { t: 1000, s: 'Checking Google Account active purchase inventory...' },
-      { t: 1600, s: 'Acquiring token signature and secure payment approval...' },
-      { t: 2200, s: 'Encrypting transaction receipts & verifying license state...' },
-      { t: 2800, s: 'Synchronizing premium entitlements. Unlocking advanced SMC & LIT tools...' }
-    ];
+      // پیدا کردن پکیج متناظر با productId
+      const pkg = currentOffering.availablePackages.find(
+        (p: any) => p.product.identifier === productId
+      );
+      if (!pkg) {
+        throw new Error('این محصول یافت نشد: ' + productId);
+      }
 
-    const runSim = () => {
-      if (progressIdx < steps.length) {
-        const step = steps[progressIdx];
-        setTimeout(() => {
-          onProgress({
-            isProcessing: true,
-            statusText: step.s,
-            error: null,
-            success: false
-          });
-          progressIdx++;
-          runSim();
-        }, step.t);
-      } else {
-        // Build updated state
+      onProgress({
+        isProcessing: true,
+        statusText: 'در حال باز شدن صفحه پرداخت گوگل...',
+        error: null,
+        success: false
+      });
+
+      const purchaseResult = await Purchases.purchasePackage({ aPackage: pkg });
+      const entitlement = purchaseResult.customerInfo.entitlements.active[ENTITLEMENT_ID];
+
+      if (entitlement) {
+        const isVip = productId === PLAY_STORE_PRODUCTS.VIP_LIFETIME;
         const originalProfile = StorageManager.getProfile();
         const updated: UserProfile = {
           ...originalProfile,
           isActivated: true,
-          subscriptionTier: tier,
-          activationKey: isVip ? 'PLAY_STORE_VIP_LIFETIME' : 'PLAY_STORE_PRO_ANNUAL'
+          subscriptionTier: isVip ? 'vip' : 'premium',
         };
-
         StorageManager.saveProfile(updated);
-        
+
         onProgress({
           isProcessing: false,
-          statusText: 'entitlement verified successfully',
+          statusText: 'خرید با موفقیت تأیید شد!',
           error: null,
           success: true
         });
-
-        // Trigger victory callback
         onComplete(updated);
+      } else {
+        throw new Error('خرید انجام شد ولی تأیید نشد. لطفا با پشتیبانی تماس بگیرید.');
       }
-    };
+    } catch (err: any) {
+      // کاربر می‌تواند خرید را لغو کند - این خطا نیست
+      const isCancelled = err?.code === 'PURCHASE_CANCELLED' || err?.userCancelled;
+      onProgress({
+        isProcessing: false,
+        statusText: '',
+        error: isCancelled ? null : (err?.message || 'خطا در فرآیند خرید'),
+        success: false
+      });
+    }
+  },
 
-    runSim();
+  // بازیابی خریدهای قبلی (وقتی کاربر اپ را روی دستگاه جدید نصب می‌کند)
+  async restorePurchases(onComplete: (updatedProfile: UserProfile | null) => void) {
+    if (!this.isNativeEnvironment()) {
+      onComplete(null);
+      return;
+    }
+    try {
+      const result = await Purchases.restorePurchases();
+      const entitlement = result.customerInfo.entitlements.active[ENTITLEMENT_ID];
+      if (entitlement) {
+        const profile = StorageManager.getProfile();
+        const updated: UserProfile = {
+          ...profile,
+          isActivated: true,
+          subscriptionTier: 'vip',
+        };
+        StorageManager.saveProfile(updated);
+        onComplete(updated);
+      } else {
+        onComplete(null);
+      }
+    } catch (err) {
+      console.error('restorePurchases error:', err);
+      onComplete(null);
+    }
   }
 };

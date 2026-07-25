@@ -588,13 +588,69 @@ export const getYahooChartTicker = (symbol: string): string => {
 };
 
 export async function fetchMarketCandles(symbol: string): Promise<MarketCandle[]> {
-  const res = await fetch(`/api/candles?symbol=${encodeURIComponent(symbol)}`);
-  if (!res.ok) {
-    throw new Error(`Failed to fetch candles for ${symbol}`);
+  const ticker = getYahooChartTicker(symbol);
+  // Fetch 1h candles for 7 days to ensure robust history (approx. 120-168 candles)
+  const chartUrl = `https://query2.finance.yahoo.com/v8/finance/chart/${ticker}?interval=1h&range=7d`;
+  
+  const proxies = [
+    (url: string) => `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
+    (url: string) => `https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`,
+    (url: string) => `https://cors.lol/?url=${encodeURIComponent(url)}`,
+    (url: string) => `https://corsproxy.io/?${encodeURIComponent(url)}`,
+    (url: string) => `https://thingproxy.freeboard.io/fetch/${url}`
+  ];
+
+  for (const proxyFn of proxies) {
+    try {
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), 4000); 
+      const response = await fetch(proxyFn(chartUrl), { signal: controller.signal });
+      clearTimeout(timer);
+
+      if (response.ok) {
+        const json = await response.json();
+        const data = json.contents ? (typeof json.contents === 'string' ? JSON.parse(json.contents) : json.contents) : json;
+        const result = data?.chart?.result?.[0];
+        if (result) {
+          const timestamps = result.timestamp || [];
+          const quotes = result.indicators?.quote?.[0];
+          if (quotes && Array.isArray(quotes.close) && timestamps.length > 0) {
+            const candles: MarketCandle[] = [];
+            for (let i = 0; i < timestamps.length; i++) {
+              const t = timestamps[i];
+              const o = quotes.open?.[i];
+              const h = quotes.high?.[i];
+              const l = quotes.low?.[i];
+              const c = quotes.close?.[i];
+              const v = quotes.volume?.[i] || 0;
+
+              if (
+                typeof t === 'number' &&
+                typeof o === 'number' && !isNaN(o) &&
+                typeof h === 'number' && !isNaN(h) &&
+                typeof l === 'number' && !isNaN(l) &&
+                typeof c === 'number' && !isNaN(c)
+              ) {
+                candles.push({
+                  timestamp: t,
+                  open: o,
+                  high: h,
+                  low: l,
+                  close: c,
+                  volume: v
+                });
+              }
+            }
+            if (candles.length >= 25) {
+              return candles;
+            }
+          }
+        }
+      }
+    } catch (err) {
+      console.warn(`Failed to fetch candles via proxy:`, err);
+    }
   }
-  const data = await res.json();
-  if (!data.candles || data.candles.length < 25) {
-    throw new Error(`Not enough candle data for ${symbol}`);
-  }
-  return data.candles as MarketCandle[];
+
+  throw new Error(`Failed to fetch actual candles for ${symbol}`);
 }
