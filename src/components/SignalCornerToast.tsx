@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Signal } from '../types';
+import { Signal, Language } from '../types';
 import { StorageManager } from '../services/api';
 import { Zap, Bell, Target, ShieldAlert, ArrowUpRight, ArrowDownRight, Check, X, ExternalLink } from 'lucide-react';
 
 interface SignalCornerToastProps {
-  language: 'fa' | 'en';
+  language: Language;
   onNavigate?: (tab: string) => void;
 }
 
@@ -111,8 +111,8 @@ export function SignalCornerToast({ language, onNavigate }: SignalCornerToastPro
 
   return (
     <div 
-      className="fixed bottom-20 right-3.5 sm:bottom-6 sm:right-6 z-[99999] w-[calc(100vw-28px)] max-w-[380px] animate-slide-up transition-all duration-300 font-sans"
-      dir={language === 'fa' ? 'rtl' : 'ltr'}
+      className="fixed bottom-[calc(env(safe-area-inset-bottom,0px)+72px)] left-2.5 right-2.5 sm:left-auto sm:right-6 sm:bottom-6 z-[99999] w-auto max-w-[390px] animate-slide-up transition-all duration-300 font-sans"
+      dir={language === 'fa' || language === 'ku' ? 'rtl' : 'ltr'}
     >
       <div className={`relative overflow-hidden p-4 rounded-2xl glass-card backdrop-blur-2xl border shadow-[0_20px_50px_rgba(0,0,0,0.6)] ${
         isBuy 
@@ -136,16 +136,18 @@ export function SignalCornerToast({ language, onNavigate }: SignalCornerToastPro
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <span className="text-[10px] font-black tracking-wider uppercase text-amber-400">
-                  {language === 'fa' ? 'سیگنال جدید Onigama' : 'NEW ONIGAMA SIGNAL'}
+                  {language === 'ku' ? 'سیگناڵی نوێی Onigama' : (language === 'fa' ? 'سیگنال جدید Onigama' : 'NEW ONIGAMA SIGNAL')}
                 </span>
                 <span className="text-[9px] px-1.5 py-0.2 rounded font-mono font-bold bg-white/10 text-slate-300">
                   {activeSignal.symbol}
                 </span>
               </div>
               <p className="text-[11px] font-bold text-slate-200 truncate">
-                {language === 'fa' 
-                  ? `فرصت معامله جدید (${activeSignal.strategy || 'SMC'})` 
-                  : `Trade Setup Issued (${activeSignal.strategy || 'SMC'})`}
+                {language === 'ku'
+                  ? `دەرفەتی نوێی مامەڵە (${activeSignal.strategy || 'SMC'})`
+                  : (language === 'fa' 
+                    ? `فرصت معامله جدید (${activeSignal.strategy || 'SMC'})` 
+                    : `Trade Setup Issued (${activeSignal.strategy || 'SMC'})`)}
               </p>
             </div>
           </div>
@@ -154,7 +156,7 @@ export function SignalCornerToast({ language, onNavigate }: SignalCornerToastPro
             type="button"
             onClick={() => setVisible(false)}
             className="p-1.5 rounded-xl text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer shrink-0"
-            title={language === 'fa' ? 'بستن' : 'Close'}
+            title={language === 'ku' ? 'داخستن' : (language === 'fa' ? 'بستن' : 'Close')}
           >
             <X className="w-4 h-4" />
           </button>
@@ -164,7 +166,7 @@ export function SignalCornerToast({ language, onNavigate }: SignalCornerToastPro
         <div className="grid grid-cols-3 gap-2 mb-3 text-center">
           <div className="p-2 rounded-xl bg-white/5 border border-white/5">
             <span className="text-[9px] text-slate-400 block font-semibold mb-0.5">
-              {language === 'fa' ? 'نوع سیگنال' : 'Type'}
+              {language === 'ku' ? 'جۆری سیگناڵ' : (language === 'fa' ? 'نوع سیگنال' : 'Type')}
             </span>
             <span className={`text-xs font-black px-2 py-0.5 rounded uppercase inline-flex items-center gap-0.5 ${
               isBuy ? 'bg-emerald-500/20 text-emerald-400' : 'bg-rose-500/20 text-rose-400'
@@ -176,7 +178,7 @@ export function SignalCornerToast({ language, onNavigate }: SignalCornerToastPro
 
           <div className="p-2 rounded-xl bg-white/5 border border-white/5">
             <span className="text-[9px] text-slate-400 block font-semibold mb-0.5">
-              {language === 'fa' ? 'نقطه ورود (Entry)' : 'Entry'}
+              {language === 'ku' ? 'نرخی چوونەژوورەوە' : (language === 'fa' ? 'نقطه ورود (Entry)' : 'Entry')}
             </span>
             <span className="text-xs font-mono font-bold text-slate-100">
               {activeSignal.entryPrice}
@@ -185,7 +187,7 @@ export function SignalCornerToast({ language, onNavigate }: SignalCornerToastPro
 
           <div className="p-2 rounded-xl bg-white/5 border border-white/5">
             <span className="text-[9px] text-slate-400 block font-semibold mb-0.5">
-              {language === 'fa' ? 'حد سود (TP1)' : 'Take Profit'}
+              {language === 'ku' ? 'دیاریکردنی قازانج' : (language === 'fa' ? 'حد سود (TP1)' : 'Take Profit')}
             </span>
             <span className="text-xs font-mono font-bold text-emerald-400">
               {activeSignal.tp1}
@@ -196,12 +198,12 @@ export function SignalCornerToast({ language, onNavigate }: SignalCornerToastPro
         {/* SL & STRATEGY ROW */}
         <div className="flex items-center justify-between text-[11px] px-2 py-1.5 rounded-xl bg-white/5 border border-white/5 mb-3 font-mono">
           <div className="flex items-center gap-1 text-slate-300">
-            <span className="text-slate-400 font-sans">{language === 'fa' ? 'حد ضرر:' : 'SL:'}</span>
+            <span className="text-slate-400 font-sans">{language === 'ku' ? 'ڕاگرتنی زیان:' : (language === 'fa' ? 'حد ضرر:' : 'SL:')}</span>
             <span className="text-rose-400 font-bold">{activeSignal.sl}</span>
           </div>
           <div className="flex items-center gap-1.5 text-slate-300">
             <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/20 text-amber-300 font-bold">
-              {language === 'fa' ? sessionFa : sessionEn}
+              {language === 'ku' ? (activeSignal.session === 'ASIA' ? 'ئاسیا' : (activeSignal.session === 'NEWYORK' ? 'نیویۆرک' : 'لەندەن')) : (language === 'fa' ? sessionFa : sessionEn)}
             </span>
             <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-500/20 text-blue-300 font-bold">
               {activeSignal.strategy || 'SMC'}
@@ -230,7 +232,7 @@ export function SignalCornerToast({ language, onNavigate }: SignalCornerToastPro
             }}
             className="flex-1 py-2 px-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 shadow-lg shadow-amber-500/20 transition-all active:scale-95 cursor-pointer"
           >
-            <span>{language === 'fa' ? 'مشاهده در داشبورد سیگنال' : 'View In Signal Dashboard'}</span>
+            <span>{language === 'ku' ? 'بینین لە داشبۆردی سیگناڵدا' : (language === 'fa' ? 'مشاهده در داشبورد سیگنال' : 'View In Signal Dashboard')}</span>
             <ExternalLink className="w-3.5 h-3.5 shrink-0" />
           </button>
 
@@ -239,7 +241,7 @@ export function SignalCornerToast({ language, onNavigate }: SignalCornerToastPro
             onClick={() => setVisible(false)}
             className="py-2 px-3 bg-white/10 hover:bg-white/15 text-slate-300 text-xs font-semibold rounded-xl transition-all cursor-pointer"
           >
-            {language === 'fa' ? 'متوجه شدم' : 'Dismiss'}
+            {language === 'ku' ? 'تێگەیشتم' : (language === 'fa' ? 'متوجه شدم' : 'Dismiss')}
           </button>
         </div>
 

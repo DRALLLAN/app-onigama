@@ -1,5 +1,5 @@
 import { useState, useEffect, FormEvent, MouseEvent } from 'react';
-import { UserSettings, UserProfile } from '../types';
+import { UserSettings, UserProfile, Language } from '../types';
 import { StorageManager } from '../services/api';
 import { PlayBillingService, PLAY_STORE_PRODUCTS, PurchaseState } from '../services/billing';
 import { activateLicense, checkLicense } from '../utils/license';
@@ -30,12 +30,13 @@ import {
 } from 'lucide-react';
 
 interface SettingsPageProps {
-  language: 'fa' | 'en';
-  setLanguage: (lang: 'fa' | 'en') => void;
+  language: Language;
+  setLanguage: (lang: Language) => void;
   onThemeChange?: (theme: 'dark' | 'glass') => void;
 }
 
 export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsPageProps) {
+  const isRtl = language === 'fa' || language === 'ku';
   const [settings, setSettings] = useState<UserSettings>({
     notifications: true,
     soundEnabled: true,
@@ -277,7 +278,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
     triggerSuccessGlow();
   };
 
-  const handleLanguageChange = (lang: 'fa' | 'en') => {
+  const handleLanguageChange = (lang: Language) => {
     const next = { ...settings, language: lang };
     setSettings(next);
     StorageManager.saveSettings(next);
@@ -367,7 +368,11 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
   const handleVerifyLicense = async () => {
     const key = profile.activationKey.toUpperCase().trim();
     if (!key) {
-      setActivationError(language === 'fa' ? 'لطفاً کد لایسنس را وارد کنید.' : 'Please enter a license key.');
+      setActivationError(
+        language === 'ku' 
+          ? 'تکایە کۆدی لایسەنس داخڵ بکە.' 
+          : (language === 'fa' ? 'لطفاً کد لایسنس را وارد کنید.' : 'Please enter a license key.')
+      );
       playFailureBuzz();
       return;
     }
@@ -387,16 +392,22 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
       setTimeout(() => setActivationSuccess(false), 3000);
     } else {
       setActivationError(
-        language === 'fa'
-          ? ('❌ ' + (result.error || 'کد لایسنس نامعتبر است.'))
-          : ('❌ ' + (result.error || 'Invalid license key.'))
+        language === 'ku'
+          ? ('❌ ' + (result.error || 'کۆدی لایسەنس نادروستە.'))
+          : (language === 'fa'
+            ? ('❌ ' + (result.error || 'کد لایسنس نامعتبر است.'))
+            : ('❌ ' + (result.error || 'Invalid license key.')))
       );
       playFailureBuzz();
     }
   };
   const handleInstantUpgrade = () => {
     // غیرفعال شد — این تابع قبلاً بدون پرداخت VIP رایگان می‌داد (حفره امنیتی)
-    setActivationError(language === 'fa' ? 'این قابلیت در دسترس نیست.' : 'This feature is not available.');
+    setActivationError(
+      language === 'ku' 
+        ? 'ئەم تایبەتمەندییە بەردەست نییە.' 
+        : (language === 'fa' ? 'این قابلیت در دسترس نیست.' : 'This feature is not available.')
+    );
     playFailureBuzz();
   };
   const handleDowngradeToFree = () => {
@@ -455,7 +466,9 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
     
     setPurchaseState({
       isProcessing: true,
-      statusText: language === 'fa' ? 'در حال برقراری اتصال با درگاه توزیع اشتراک...' : 'Connecting to secure app-monetization servers...',
+      statusText: language === 'ku'
+        ? 'پەیوەندی لەگەڵ دەروازەی دابەشکردنی ئابوونە دەبەسترێت...'
+        : (language === 'fa' ? 'در حال برقراری اتصال با درگاه توزیع اشتراک...' : 'Connecting to secure app-monetization servers...'),
       error: null,
       success: false
     });
@@ -463,10 +476,10 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
 
     let progressIdx = 0;
     const steps = [
-      { t: 400, s: language === 'fa' ? 'تماس با سرورهای پردازش خرید گوگل‌پلی...' : 'Contacting play.google.com backend nodes...' },
-      { t: 900, s: language === 'fa' ? 'اعتبارسنجی پکیج اشتراک سفارشی و متد تمدید...' : 'Validating custom subscription tier & renewal frequency...' },
-      { t: 1400, s: language === 'fa' ? 'صدور توکن تراکنش و همگام‌سازی لایحه مالی...' : 'Acquiring token signature and secure payment approval...' },
-      { t: 1900, s: language === 'fa' ? 'اعمال دسترسی طلایی و تأیید هویت کاربری...' : 'Encrypting transaction receipts & verifying license state...' }
+      { t: 400, s: language === 'ku' ? 'پەیوەندی بە سێرڤەرەکانی گووگڵ پلەی...' : (language === 'fa' ? 'تماس با سرورهای پردازش خرید گوگل‌پلی...' : 'Contacting play.google.com backend nodes...') },
+      { t: 900, s: language === 'ku' ? 'پشتڕاستکردنەوەی پاکێجی ئابوونە...' : (language === 'fa' ? 'اعتبارسنجی پکیج اشتراک سفارشی و متد تمدید...' : 'Validating custom subscription tier & renewal frequency...') },
+      { t: 1400, s: language === 'ku' ? 'دەرکردنی تۆکنی مامەڵە و پەسەندکردنی پارەدان...' : (language === 'fa' ? 'صدور توکن تراکنش و همگام‌سازی لایحه مالی...' : 'Acquiring token signature and secure payment approval...') },
+      { t: 1900, s: language === 'ku' ? 'چالاککردنی دەسەڵاتی زێڕین و مۆڵەت...' : (language === 'fa' ? 'اعمال دسترسی طلایی و تأیید هویت کاربری...' : 'Encrypting transaction receipts & verifying license state...') }
     ];
 
     const runSim = () => {
@@ -535,7 +548,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
   };
 
   return (
-    <div className="space-y-6 pb-24" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+    <div className="space-y-6 pb-24" dir={isRtl ? 'rtl' : 'ltr'}>
       
       {/* HEADER SECTION */}
       <div className="flex justify-between items-center">
@@ -553,13 +566,13 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
               });
             }}
             className="text-xl font-bold text-white tracking-wide cursor-pointer select-none active:scale-[0.99] transition-all"
-            title={language === 'fa' ? 'برای وضعیت توسعه‌دهندگان ضربه بزنید' : 'Tap for developer options'}
+            title={language === 'ku' ? 'کرتە بکە بۆ بژاردەی گەشەپێدەران' : (language === 'fa' ? 'برای وضعیت توسعه‌دهندگان ضربه بزنید' : 'Tap for developer options')}
           >
-            {language === 'fa' ? 'تنظیمات کاربری سیستم' : 'System & User Settings'}
+            {language === 'ku' ? 'ڕێکخستنەکانی سیستەم و بەکارهێنەر' : (language === 'fa' ? 'تنظیمات کاربری سیستم' : 'System & User Settings')}
             {devModeActive && <span className="text-[10px] text-emerald-400 font-mono ml-2"> (DEV)</span>}
           </h1>
           <p className="text-xs text-slate-400 font-mono mt-0.5">
-            {language === 'fa' ? 'مدیریت اولویت‌ها، اعلانات صوتی و مدیریت طلا' : 'Customize platform parameters, risk controls, and local behaviors'}
+            {language === 'ku' ? 'بەڕێوەبردنی ئاگادارییەکان، ئاستی مەترسی و داتای بازاڕ' : (language === 'fa' ? 'مدیریت اولویت‌ها، اعلانات صوتی و مدیریت طلا' : 'Customize platform parameters, risk controls, and local behaviors')}
           </p>
         </div>
       </div>
@@ -568,7 +581,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
       {showSaveSuccess && (
         <div className="p-3.5 bg-emerald-500/10 border border-emerald-500/30 rounded-2xl text-center text-emerald-300 text-xs font-semibold animate-fade-in flex items-center justify-center gap-2">
           <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
-          <span>{language === 'fa' ? 'تنظیمات با موفقیت در فضای کلاینت ست و ذخیره شد.' : 'Preferences successfully saved to client storage.'}</span>
+          <span>{language === 'ku' ? 'ڕێکخستنەکان بە سەرکەوتوویی پاشەکەوت کران.' : (language === 'fa' ? 'تنظیمات با موفقیت در فضای کلاینت ست و ذخیره شد.' : 'Preferences successfully saved to client storage.')}</span>
         </div>
       )}
 
@@ -585,9 +598,9 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
             <div>
               <label className="text-xs font-semibold text-slate-300 block mb-2.5 flex items-center gap-1.5">
                 <Globe className="w-3.5 h-3.5 text-blue-400" />
-                <span>{language === 'fa' ? 'زبان پیش‌فرض نرم‌افزار' : 'Application Language'}</span>
+                <span>{language === 'ku' ? 'زمانی سەرەکی بەرنامە' : (language === 'fa' ? 'زبان پیش‌فرض نرم‌افزار' : 'Application Language')}</span>
               </label>
-              <div className="grid grid-cols-2 gap-2 bg-white/2 p-1 rounded-2xl border border-white/5 font-mono">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 bg-white/2 p-1 rounded-2xl border border-white/5 font-mono">
                 <button
                   onClick={() => handleLanguageChange('fa')}
                   className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
@@ -603,10 +616,20 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                   className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
                     language === 'en'
                       ? 'bg-gradient-to-r from-blue-500/20 to-indigo-500/20 text-blue-300 border border-blue-500/20 shadow-md'
-                      : 'text-slate-404 hover:text-white'
+                      : 'text-slate-400 hover:text-white'
                   }`}
                 >
                   English (EN)
+                </button>
+                <button
+                  onClick={() => handleLanguageChange('ku')}
+                  className={`py-2 px-3 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    language === 'ku'
+                      ? 'bg-gradient-to-r from-blue-500/20 to-indigo-500/20 text-blue-300 border border-blue-500/20 shadow-md'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  کوردی (سۆرانی عێراق)
                 </button>
               </div>
             </div>
@@ -617,7 +640,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
             <div>
               <label className="text-xs font-semibold text-slate-300 block mb-2.5 flex items-center gap-1.5">
                 <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-                <span>{language === 'fa' ? 'سبک بصری کارت‌ها' : 'Visual Accent Style'}</span>
+                <span>{language === 'ku' ? 'شێوازی بینراوی کارتەکان' : (language === 'fa' ? 'سبک بصری کارت‌ها' : 'Visual Accent Style')}</span>
               </label>
               <div className="grid grid-cols-2 gap-2 bg-white/2 p-1 rounded-2xl border border-white/5 font-mono">
                 <button
@@ -628,7 +651,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  {language === 'fa' ? 'تاریک مطلق (Classic)' : 'Classic Charcoal'}
+                  {language === 'ku' ? 'تاریکی کلاسیک (Dark)' : (language === 'fa' ? 'تاریک مطلق (Classic)' : 'Classic Charcoal')}
                 </button>
                 <button
                   onClick={() => handleThemeChange('glass')}
@@ -638,7 +661,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                       : 'text-slate-400 hover:text-white'
                   }`}
                 >
-                  {language === 'fa' ? 'شیشه‌ای (Premium)' : 'Sleek Cyber Glass'}
+                  {language === 'ku' ? 'شوشەیی مۆدێرن (Glass)' : (language === 'fa' ? 'شیشه‌ای (Premium)' : 'Sleek Cyber Glass')}
                 </button>
               </div>
             </div>
@@ -649,10 +672,10 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
             <div className="flex justify-between items-center py-1">
               <div>
                 <span className="text-sm font-semibold text-slate-200 block">
-                  {language === 'fa' ? 'اعلان صوتی اهداف معاملاتی' : 'Dynamic Target Notifications'}
+                  {language === 'ku' ? 'ئاگادارکردنەوەی ئامانجەکان' : (language === 'fa' ? 'اعلان صوتی اهداف معاملاتی' : 'Dynamic Target Notifications')}
                 </span>
                 <span className="text-[11px] text-slate-400 block mt-0.5">
-                  {language === 'fa' ? 'پخش بوق ریتمیک سیستم هنگام لمس TP/SL' : 'Trigger positive sound frequencies when TP or SL is breached'}
+                  {language === 'ku' ? 'لێدانی دەنگی سیستم لە کاتی گەیشتن بە TP/SL' : (language === 'fa' ? 'پخش بوق ریتمیک سیستم هنگام لمس TP/SL' : 'Trigger positive sound frequencies when TP or SL is breached')}
                 </span>
               </div>
               <button
@@ -662,7 +685,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                 }`}
               >
                 <span className={`block w-5.5 h-5.5 rounded-full bg-white transition-all duration-300 transform ${
-                  settings.notifications ? (language === 'fa' ? '-translate-x-5.5' : 'translate-x-[22px]') : 'translate-x-0'
+                  settings.notifications ? (isRtl ? '-translate-x-5.5' : 'translate-x-[22px]') : 'translate-x-0'
                 }`} />
               </button>
             </div>
@@ -672,10 +695,10 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
               <div>
                 <span className="text-sm font-semibold text-slate-200 block flex items-center gap-1.5">
                   <Bell className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                  <span>{language === 'fa' ? 'نوتیفیکیشن گوشه نرم‌افزار هنگام صدور سیگنال' : 'Corner Signal Popup Notification'}</span>
+                  <span>{language === 'ku' ? 'ئاگاداریی گۆشەی بەرنامە لە کاتی سیگناڵدا' : (language === 'fa' ? 'نوتیفیکیشن گوشه نرم‌افزار هنگام صدور سیگنال' : 'Corner Signal Popup Notification')}</span>
                 </span>
                 <span className="text-[11px] text-slate-400 block mt-0.5">
-                  {language === 'fa' ? 'نمایش بنر شناور لحظه‌ای در گوشه صفحه هنگام تحلیل و صدور سیگنال جدید' : 'Show instant floating alert toast in screen corner whenever a signal is generated'}
+                  {language === 'ku' ? 'پیشاندانی پەنجەرەی سەرئاوکەوتوو لە کاتی دەرچوونی سیگناڵی نوێ' : (language === 'fa' ? 'نمایش بنر شناور لحظه‌ای در گوشه صفحه هنگام تحلیل و صدور سیگنال جدید' : 'Show instant floating alert toast in screen corner whenever a signal is generated')}
                 </span>
               </div>
               <button
@@ -685,7 +708,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                 }`}
               >
                 <span className={`block w-5.5 h-5.5 rounded-full bg-white transition-all duration-300 transform ${
-                  settings.signalCornerNotification !== false ? (language === 'fa' ? '-translate-x-5.5' : 'translate-x-[22px]') : 'translate-x-0'
+                  settings.signalCornerNotification !== false ? (isRtl ? '-translate-x-5.5' : 'translate-x-[22px]') : 'translate-x-0'
                 }`} />
               </button>
             </div>
@@ -698,7 +721,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                 className="w-full py-2.5 px-3 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-300 font-bold text-xs rounded-2xl flex items-center justify-center gap-2 transition-all active:scale-95 cursor-pointer"
               >
                 <Bell className="w-4 h-4 text-amber-400 animate-bounce shrink-0" />
-                <span>{language === 'fa' ? 'تست نمایش نوتیفیکیشن گوشه تصویر' : 'Test Corner Signal Notification Toast'}</span>
+                <span>{language === 'ku' ? 'تاقیکردنەوەی ئاگاداریی گۆشەی ڕوونما' : (language === 'fa' ? 'تست نمایش نوتیفیکیشن گوشه تصویر' : 'Test Corner Signal Notification Toast')}</span>
               </button>
             </div>
 
@@ -706,10 +729,10 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
             <div className="flex justify-between items-center py-1">
               <div>
                 <span className="text-sm font-semibold text-slate-200 block">
-                  {language === 'fa' ? 'صدای بازخورد لمس صوتی' : 'Interface Sound Feedback'}
+                  {language === 'ku' ? 'دەنگی کلیک و بەکارهێنان' : (language === 'fa' ? 'صدای بازخورد لمس صوتی' : 'Interface Sound Feedback')}
                 </span>
                 <span className="text-[11px] text-slate-400 block mt-0.5">
-                  {language === 'fa' ? 'صدای پالس ملایم هنگام تغییر صفحات' : 'Synthesize soft audio indicators on button interactions'}
+                  {language === 'ku' ? 'لێدانی دەنگ لە کاتی گۆڕینی پەڕە و دوگمەکان' : (language === 'fa' ? 'صدای پالس ملایم هنگام تغییر صفحات' : 'Synthesize soft audio indicators on button interactions')}
                 </span>
               </div>
               <button
@@ -719,7 +742,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                 }`}
               >
                 <span className={`block w-5.5 h-5.5 rounded-full bg-white transition-all duration-300 transform ${
-                  settings.soundEnabled ? (language === 'fa' ? '-translate-x-5.5' : 'translate-x-[22px]') : 'translate-x-0'
+                  settings.soundEnabled ? (isRtl ? '-translate-x-5.5' : 'translate-x-[22px]') : 'translate-x-0'
                 }`} />
               </button>
             </div>
@@ -730,7 +753,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
             <div>
               <label className="text-xs font-bold text-slate-300 block mb-2.5 flex items-center gap-1.5">
                 <ShieldAlert className="w-3.5 h-3.5 text-yellow-500" />
-                <span>{language === 'fa' ? 'پروفایل پیش‌فرض مدیریت ریسک سرمایه' : 'Risk Management Profiles'}</span>
+                <span>{language === 'ku' ? 'شێوازی بەڕێوەبردنی مەترسیی سەرمایە' : (language === 'fa' ? 'پروفایل پیش‌فرض مدیریت ریسک سرمایه' : 'Risk Management Profiles')}</span>
               </label>
               
               <div className="grid grid-cols-3 gap-1.5 bg-white/2 p-1 rounded-2xl border border-white/5 text-xs font-mono text-center mb-4">
@@ -744,7 +767,9 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                         : 'text-slate-400 hover:text-white'
                     }`}
                   >
-                    {language === 'fa' ? (profile === 'low' ? 'محافظه‌کار' : profile === 'medium' ? 'متعادل' : 'ریسک بالا') : profile}
+                    {language === 'ku' 
+                      ? (profile === 'low' ? 'پارێزگار' : profile === 'medium' ? 'هاوسەنگ' : 'مەترسیی بەرز') 
+                      : (language === 'fa' ? (profile === 'low' ? 'محافظه‌کار' : profile === 'medium' ? 'متعادل' : 'ریسک بالا') : profile)}
                   </button>
                 ))}
               </div>
@@ -754,39 +779,45 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                 {settings.riskTolerance === 'low' && (
                   <>
                     <div className="flex justify-between text-[11px] font-bold text-slate-300">
-                      <span>{language === 'fa' ? 'حجم تراکنش پیشنهادی:' : 'Suggested Volume size:'}</span>
+                      <span>{language === 'ku' ? 'قەبارەی مامەڵەی پێشنیارکراو:' : (language === 'fa' ? 'حجم تراکنش پیشنهادی:' : 'Suggested Volume size:')}</span>
                       <span className="text-emerald-400 font-mono">0.01 - 0.05 Lot</span>
                     </div>
                     <p className="text-[10px] text-slate-400 leading-relaxed mt-1">
-                      {language === 'fa'
-                        ? 'ریسک متعارف کمتر از ۰.۵ درصد در هر پوزیشن. بسیار مناسب در شرایط پرنوسان بازار طلا جهت حفظ سرمایه اصلی.'
-                        : 'Conserves capital with less than 0.5% risk exposure. Ideal for larger accounts or proprietary firm rules.'}
+                      {language === 'ku'
+                        ? 'مەترسیی کەمتر لە ٠.٥٪ لە هەر پۆزیشنێکدا. زۆر گونجاوە بۆ بارودۆخی پڕنوسانی بازاڕی زێڕ بۆ پاراستنی سەرمایە.'
+                        : (language === 'fa'
+                          ? 'ریسک متعارف کمتر از ۰.۵ درصد در هر پوزیشن. بسیار مناسب در شرایط پرنوسان بازار طلا جهت حفظ سرمایه اصلی.'
+                          : 'Conserves capital with less than 0.5% risk exposure. Ideal for larger accounts or proprietary firm rules.')}
                     </p>
                   </>
                 )}
                 {settings.riskTolerance === 'medium' && (
                   <>
                     <div className="flex justify-between text-[11px] font-bold text-slate-300">
-                      <span>{language === 'fa' ? 'حجم تراکنش پیشنهادی:' : 'Suggested Volume size:'}</span>
+                      <span>{language === 'ku' ? 'قەبارەی مامەڵەی پێشنیارکراو:' : (language === 'fa' ? 'حجم تراکنش پیشنهادی:' : 'Suggested Volume size:')}</span>
                       <span className="text-blue-400 font-mono">0.10 - 0.25 Lot</span>
                     </div>
                     <p className="text-[10px] text-slate-400 leading-relaxed mt-1">
-                      {language === 'fa'
-                        ? 'ریسک بهینه ۱ الی ۲ درصدی در هر پوزیشن. تعادل عالی میان شتاب سودآوری و نرخ افت سرمایه طبیعی.'
-                        : 'Standard 1-2% risk model. Balanced blend or optimal drawdown mitigation and yield compounding.'}
+                      {language === 'ku'
+                        ? 'مەترسیی گونجاوی ١٪ تا ٢٪ لە هەر پۆزیشنێکدا. هاوسەنگییەکی نایاب لەنێوان خێرایی قازانج و دابەزینی سروشتیی سەرمایە.'
+                        : (language === 'fa'
+                          ? 'ریسک بهینه ۱ الی ۲ درصدی در هر پوزیشن. تعادل عالی میان شتاب سودآوری و نرخ افت سرمایه طبیعی.'
+                          : 'Standard 1-2% risk model. Balanced blend or optimal drawdown mitigation and yield compounding.')}
                     </p>
                   </>
                 )}
                 {settings.riskTolerance === 'high' && (
                   <>
                     <div className="flex justify-between text-[11px] font-bold text-slate-300">
-                      <span>{language === 'fa' ? 'حجم تراکنش پیشنهادی:' : 'Suggested Volume size:'}</span>
+                      <span>{language === 'ku' ? 'قەبارەی مامەڵەی پێشنیارکراو:' : (language === 'fa' ? 'حجم تراکنش پیشنهادی:' : 'Suggested Volume size:')}</span>
                       <span className="text-red-400 font-mono">0.30 - 1.00 Lot</span>
                     </div>
                     <p className="text-[10px] text-slate-400 leading-relaxed mt-1">
-                      {language === 'fa'
-                        ? 'شیوه تهاجمی بین ۳ الی ۵ درصد ریسک روی هر پوزیشن. نیازمند استمرار روانی و حد ضررهای کاملاً بهینه شده.'
-                        : 'Aggressive 3-5% leverage ratio. Optimized high profit factors backed by tighter local protective stops.'}
+                      {language === 'ku'
+                        ? 'شێوازی هێرشبەرانەی نێوان ٣٪ تا ٥٪ مەترسی لەسەر هەر مامەڵەیەک. پێویستی بە دیسیپلینی تەواو و ستۆپ‌لۆسی ورد هەیە.'
+                        : (language === 'fa'
+                          ? 'شیوه تهاجمی بین ۳ الی ۵ درصد ریسک روی هر پوزیشن. نیازمند استمرار روانی و حد ضررهای کاملاً بهینه شده.'
+                          : 'Aggressive 3-5% leverage ratio. Optimized high profit factors backed by tighter local protective stops.')}
                     </p>
                   </>
                 )}
@@ -805,13 +836,13 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
           <div className="p-6 rounded-3xl glass-card border border-white/5 space-y-4">
             <h2 className="text-xs font-bold text-slate-300 tracking-wider uppercase flex items-center gap-1.5 border-b border-white/5 pb-3">
               <User className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>{language === 'fa' ? 'پروفایل هویت و مشخصات معامله‌گر' : 'Trader Profile Details'}</span>
+              <span>{language === 'ku' ? 'پرۆفایل و ناسنامەی بازرگان' : (language === 'fa' ? 'پروفایل هویت و مشخصات معامله‌گر' : 'Trader Profile Details')}</span>
             </h2>
 
             {showProfileSuccess && (
               <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-xl text-center text-xs font-semibold animate-fade-in flex items-center justify-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>{language === 'fa' ? 'اطلاعات پروفایل با موفقیت ذخیره شد.' : 'Trader profile successfully saved.'}</span>
+                <span>{language === 'ku' ? 'زانیارییەکانی پرۆفایل بە سەرکەوتوویی پاشەکەوت کران.' : (language === 'fa' ? 'اطلاعات پروفایل با موفقیت ذخیره شد.' : 'Trader profile successfully saved.')}</span>
               </div>
             )}
 
@@ -819,7 +850,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
               <div className="grid grid-cols-1 gap-3.5">
                 <div className="space-y-1">
                   <label className="text-[11px] font-semibold text-slate-400 block pb-1">
-                    {language === 'fa' ? 'نام و نام‌خانوادگی معامله‌گر' : 'Full Name'}
+                    {language === 'ku' ? 'ناوی تەواوی بازرگان' : (language === 'fa' ? 'نام و نام‌خانوادگی معامله‌گر' : 'Full Name')}
                   </label>
                   <div className="relative">
                     <User className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-500" />
@@ -828,15 +859,15 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                       required
                       value={profile.fullName}
                       onChange={(e) => handleProfileFieldChange('fullName', e.target.value)}
-                      placeholder={language === 'fa' ? 'مثال: امیر مرادی' : 'e.g., Amir Moradi'}
-                      className={`w-full bg-slate-950/60 border border-white/5 rounded-xl py-2 pl-9 pr-3 text-white focus:outline-none focus:border-emerald-500/50 text-xs font-sans placeholder-slate-600 ${language === 'fa' ? 'text-right' : 'text-left'}`}
+                      placeholder={language === 'ku' ? 'نموونە: ئامانج ئەحمەد' : (language === 'fa' ? 'مثال: امیر مرادی' : 'e.g., Amir Moradi')}
+                      className={`w-full bg-slate-950/60 border border-white/5 rounded-xl py-2 pl-9 pr-3 text-white focus:outline-none focus:border-emerald-500/50 text-xs font-sans placeholder-slate-600 ${language === 'fa' || language === 'ku' ? 'text-right' : 'text-left'}`}
                     />
                   </div>
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-[11px] font-semibold text-slate-400 block pb-1">
-                    {language === 'fa' ? 'آدرس ایمیل معامله‌گر' : 'Email Address'}
+                    {language === 'ku' ? 'ئیمەیڵی بازرگان' : (language === 'fa' ? 'آدرس ایمیل معامله‌گر' : 'Email Address')}
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-2.5 w-3.5 h-3.5 text-slate-500" />
@@ -855,31 +886,31 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
               <div className="grid grid-cols-2 gap-3.5">
                 <div className="space-y-1">
                   <label className="text-[11px] font-semibold text-slate-400 block pb-1">
-                    {language === 'fa' ? 'سابقه معامله‌گری' : 'Experience Level'}
+                    {language === 'ku' ? 'ئاستی ئەزموون' : (language === 'fa' ? 'سابقه معامله‌گری' : 'Experience Level')}
                   </label>
                   <select
                     value={profile.experience}
                     onChange={(e) => handleProfileFieldChange('experience', e.target.value)}
                     className="w-full bg-slate-950/60 border border-white/5 rounded-xl py-2 px-2.5 text-white focus:outline-none focus:border-emerald-500/10 text-xs font-semibold cursor-pointer"
                   >
-                    <option value="beginner">{language === 'fa' ? 'مبتدی (Beginner)' : 'Beginner'}</option>
-                    <option value="intermediate">{language === 'fa' ? 'متوسط (Intermediate)' : 'Intermediate'}</option>
-                    <option value="expert">{language === 'fa' ? 'حرفه‌ای (Expert)' : 'Expert'}</option>
+                    <option value="beginner">{language === 'ku' ? 'سەرەتایی (Beginner)' : (language === 'fa' ? 'مبتدی (Beginner)' : 'Beginner')}</option>
+                    <option value="intermediate">{language === 'ku' ? 'مامناوەند (Intermediate)' : (language === 'fa' ? 'متوسط (Intermediate)' : 'Intermediate')}</option>
+                    <option value="expert">{language === 'ku' ? 'پڕۆفیشناڵ (Expert)' : (language === 'fa' ? 'حرفه‌ای (Expert)' : 'Expert')}</option>
                   </select>
                 </div>
 
                 <div className="space-y-1">
                   <label className="text-[11px] font-semibold text-slate-400 block pb-1">
-                    {language === 'fa' ? 'میزان سرمایه درگیر' : 'Trading Capital'}
+                    {language === 'ku' ? 'بڕی سەرمایەی بەردەست' : (language === 'fa' ? 'میزان سرمایه درگیر' : 'Trading Capital')}
                   </label>
                   <select
                     value={profile.capital}
                     onChange={(e) => handleProfileFieldChange('capital', e.target.value)}
                     className="w-full bg-slate-950/60 border border-white/5 rounded-xl py-2 px-2.5 text-white focus:outline-none focus:border-emerald-500/10 text-xs font-semibold cursor-pointer"
                   >
-                    <option value="under10k">{language === 'fa' ? 'کمتر از ۱۰k دلار' : '< $10,000'}</option>
-                    <option value="10k_50k">{language === 'fa' ? '۱۰k الی ۵۰k دلار' : '$10,000 - $50,000'}</option>
-                    <option value="above50k">{language === 'fa' ? 'بیش از ۵۰k دلار' : '> $50,000'}</option>
+                    <option value="under10k">{language === 'ku' ? 'کەمتر لە ١٠k دۆلار' : (language === 'fa' ? 'کمتر از ۱۰k دلار' : '< $10,000')}</option>
+                    <option value="10k_50k">{language === 'ku' ? '١٠k بۆ ٥٠k دۆلار' : (language === 'fa' ? '۱۰k الی ۵۰k دلار' : '$10,000 - $50,000')}</option>
+                    <option value="above50k">{language === 'ku' ? 'زیاتر لە ٥٠k دۆلار' : (language === 'fa' ? 'بیش از ۵۰k دلار' : '> $50,000')}</option>
                   </select>
                 </div>
               </div>
@@ -889,7 +920,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                 className="w-full py-2.5 px-4 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl text-[11px] uppercase tracking-wider transition-all shadow-md active:scale-95 cursor-pointer flex items-center justify-center gap-1.5"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
-                <span>{language === 'fa' ? 'ذخیره مشخصات پروفایل' : 'Save Profile Details'}</span>
+                <span>{language === 'ku' ? 'پاشەکەوتکردنی پرۆفایل' : (language === 'fa' ? 'ذخیره مشخصات پروفایل' : 'Save Profile Details')}</span>
               </button>
             </form>
           </div>
@@ -1169,16 +1200,19 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                 
                 <div className="space-y-1.5 max-w-sm mx-auto">
                   <p className="text-xs font-semibold text-slate-100">
-                    Your app doesn't have any subscriptions yet
+                    {language === 'ku'
+                      ? 'بەرنامەکەت تا ئێستا هیچ ئابوونەیەکی نییە'
+                      : (language === 'fa' 
+                        ? 'برنامه شما هنوز هیچ اشتراکی ندارد' 
+                        : "Your app doesn't have any subscriptions yet")}
                   </p>
                   <p className="text-[10.5px] text-slate-400 leading-relaxed font-sans">
-                    Create subscriptions and sell them in different ways. Configure auto-renewing subscriptions, prepaid plans with top-ups, and various periods. Add offers to help acquire new subscribers or encourage existing subscribers to upgrade.
+                    {language === 'ku'
+                      ? 'ئابوونەکان دروست بکە و بە شێوازی جیاواز بیفرۆشە. نوێبوونەوەی خۆکار، پلانەکانی پێشەکی و ماوەی جیاواز دابنێ.'
+                      : (language === 'fa'
+                        ? 'اشتراک‌ها را ایجاد کنید و به روش‌های گوناگون به فروش برسانید. تمدید خودکار، طرح‌های پیش‌پرداخت با شارژ مجدد و دوره‌های متنوع را پیکربندی نمایید.'
+                        : 'Create subscriptions and sell them in different ways. Configure auto-renewing subscriptions, prepaid plans with top-ups, and various periods. Add offers to help acquire new subscribers or encourage existing subscribers to upgrade.')}
                   </p>
-                  {language === 'fa' && (
-                    <p className="text-[10px] text-slate-400 leading-relaxed pt-1.5 border-t border-white/5 font-sans mt-2">
-                      برنامه شما هنوز هیچ اشتراکی ندارد! همین حالا گزینه‌های تمدید خودکار، طرح‌های پیش‌پرداخت، بازه‌های متنوع و تخفیفات تبلیغاتی (Offers) گوناگون را برای ترغیب تریدرها پیکربندی و ایجاد نمایید.
-                    </p>
-                  )}
                 </div>
 
                 <button
@@ -1186,7 +1220,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                   onClick={() => setIsCreatingSub(true)}
                   className="px-5 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-650 hover:from-blue-500 hover:to-indigo-500 text-white font-extrabold rounded-xl text-xs sm:text-sm shadow-md cursor-pointer transition-all active:scale-95 flex items-center gap-2 mx-auto"
                 >
-                  <span>{language === 'fa' ? '➕ پیکربندی اولین اشتراک' : '➕ Create Subscription Plan'}</span>
+                  <span>{language === 'ku' ? '➕ دروستکردنی پلانی ئابوونە' : (language === 'fa' ? '➕ پیکربندی اولین اشتراک' : '➕ Create Subscription Plan')}</span>
                 </button>
               </div>
             ) : null}
@@ -1195,27 +1229,27 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
             {isCreatingSub && (
               <form onSubmit={handleCreateSubscription} className="space-y-4 text-xs">
                 <div className="flex justify-between items-center bg-white/2 p-2 rounded-xl text-slate-300">
-                  <span className="font-bold">{language === 'fa' ? 'ایجاد طرح اشتراک جدید' : 'Configure Premium Offer'}</span>
+                  <span className="font-bold">{language === 'ku' ? 'دروستکردنی پلانی ئابوونەی نوێ' : (language === 'fa' ? 'ایجاد طرح اشتراک جدید' : 'Configure Premium Offer')}</span>
                   <button 
                     type="button" 
                     onClick={() => setIsCreatingSub(false)}
                     className="text-[10px] text-slate-500 hover:text-white"
                   >
-                    {language === 'fa' ? 'انصراف' : 'Cancel'}
+                    {language === 'ku' ? 'پاشگەزبوونەوە' : (language === 'fa' ? 'انصراف' : 'Cancel')}
                   </button>
                 </div>
 
                 {/* Sub Name */}
                 <div className="space-y-1">
                   <label className="text-[10.5px] font-semibold text-slate-400 block pb-1">
-                    {language === 'fa' ? 'نام طرح اشتراک' : 'Subscription Name'}
+                    {language === 'ku' ? 'ناوی پلانی ئابوونە' : (language === 'fa' ? 'نام طرح اشتراک' : 'Subscription Name')}
                   </label>
                   <input
                     type="text"
                     required
                     value={newSub.name}
                     onChange={(e) => setNewSub({ ...newSub, name: e.target.value })}
-                    placeholder={language === 'fa' ? 'مثال: اشتراک طلایی الیت' : 'e.g., Golden Elite Analytics'}
+                    placeholder={language === 'ku' ? 'نموونە: ئابوونەی زێڕینی ئەلیت' : (language === 'fa' ? 'مثال: اشتراک طلایی الیت' : 'e.g., Golden Elite Analytics')}
                     className={`w-full bg-slate-950/60 border border-white/5 rounded-xl py-2 px-3 text-white focus:outline-none focus:border-blue-500/50 text-xs font-sans placeholder-slate-600`}
                   />
                 </div>
@@ -1225,23 +1259,23 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                   {/* Type */}
                   <div className="space-y-1">
                     <label className="text-[10.5px] font-semibold text-slate-400 block pb-1">
-                      {language === 'fa' ? 'نوع مکانیزم تراکنش' : 'Monetization Style'}
+                      {language === 'ku' ? 'جۆری میکانیزمی مامەڵە' : (language === 'fa' ? 'نوع مکانیزم تراکنش' : 'Monetization Style')}
                     </label>
                     <select
                       value={newSub.type}
                       onChange={(e) => setNewSub({ ...newSub, type: e.target.value })}
                       className="w-full bg-slate-950/60 border border-white/5 rounded-xl py-2 px-2.5 text-white focus:outline-none focus:border-blue-500/10 text-xs cursor-pointer"
                     >
-                      <option value="auto_renew">{language === 'fa' ? 'تمدید خودکار (Auto-Renew)' : 'Auto-Renewing Sub'}</option>
-                      <option value="prepaid">{language === 'fa' ? 'پیش‌پرداخت (Prepaid Plan)' : 'Prepaid with Top-up'}</option>
-                      <option value="consumable">{language === 'fa' ? 'اعتبار مصرفی / ارتقا' : 'One-time upgrade offer'}</option>
+                      <option value="auto_renew">{language === 'ku' ? 'نوێبوونەوەی خۆکار (Auto-Renew)' : (language === 'fa' ? 'تمدید خودکار (Auto-Renew)' : 'Auto-Renewing Sub')}</option>
+                      <option value="prepaid">{language === 'ku' ? 'پێشەکی (Prepaid Plan)' : (language === 'fa' ? 'پیش‌پرداخت (Prepaid Plan)' : 'Prepaid with Top-up')}</option>
+                      <option value="consumable">{language === 'ku' ? 'باڵانسی بەکارهێنان / بەرزکردنەوە' : (language === 'fa' ? 'اعتبار مصرفی / ارتقا' : 'One-time upgrade offer')}</option>
                     </select>
                   </div>
 
                   {/* Period */}
                   <div className="space-y-1">
                     <label className="text-[10.5px] font-semibold text-slate-400 block pb-1">
-                      {language === 'fa' ? 'دوره دسترسی' : 'Access Period'}
+                      {language === 'ku' ? 'ماوەی دەستپێگەیشتن' : (language === 'fa' ? 'دوره دسترسی' : 'Access Period')}
                     </label>
                     <select
                       value={newSub.period}
@@ -1249,11 +1283,11 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                       onChange={(e) => setNewSub({ ...newSub, period: e.target.value })}
                       className="w-full bg-slate-950/60 border border-white/5 rounded-xl py-2 px-2.5 text-white focus:outline-none focus:border-blue-500/10 text-xs cursor-pointer disabled:opacity-50"
                     >
-                      <option value="week">{language === 'fa' ? 'هفتگی (1 Week)' : 'Weekly'}</option>
-                      <option value="month">{language === 'fa' ? 'ماهانه (1 Month)' : 'Monthly'}</option>
-                      <option value="half_year">{language === 'fa' ? '۶ ماهه (6 Months)' : 'Semiannually'}</option>
-                      <option value="year">{language === 'fa' ? 'سالانه (1 Year)' : 'Annual'}</option>
-                      <option value="lifetime">{language === 'fa' ? 'مادام‌العمر (Lifetime)' : 'Lifetime Pack'}</option>
+                      <option value="week">{language === 'ku' ? 'هەفتانە (١ هەفتە)' : (language === 'fa' ? 'هفتگی (1 Week)' : 'Weekly')}</option>
+                      <option value="month">{language === 'ku' ? 'مانگانە (١ مانگ)' : (language === 'fa' ? 'ماهانه (1 Month)' : 'Monthly')}</option>
+                      <option value="half_year">{language === 'ku' ? '٦ مانگە' : (language === 'fa' ? '۶ ماهه (6 Months)' : 'Semiannually')}</option>
+                      <option value="year">{language === 'ku' ? 'ساڵانە (١ ساڵ)' : (language === 'fa' ? 'سالانه (1 Year)' : 'Annual')}</option>
+                      <option value="lifetime">{language === 'ku' ? 'هەمیشەیی (Lifetime)' : (language === 'fa' ? 'مادام‌العمر (Lifetime)' : 'Lifetime Pack')}</option>
                     </select>
                   </div>
                 </div>
@@ -1262,7 +1296,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                 {newSub.type === 'prepaid' && (
                   <div className="p-3 bg-blue-500/5 border border-blue-500/10 rounded-2xl space-y-1 text-[10.5px] text-slate-300">
                     <div className="flex justify-between items-center font-sans">
-                      <span>{language === 'fa' ? 'شارژ پیش‌فرض دوره فعال (Top-Up):' : 'Prepaid activation quota:'}</span>
+                      <span>{language === 'ku' ? 'باڵانسی سەرەتایی ماوەی چالاک (Top-Up):' : (language === 'fa' ? 'شارژ پیش‌فرض دوره فعال (Top-Up):' : 'Prepaid activation quota:')}</span>
                       <span className="font-bold font-mono text-blue-400">{newSub.topupValue} Days</span>
                     </div>
                     <input
@@ -1276,7 +1310,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                     />
                     <p className="text-[9.5px] text-slate-500 block leading-normal pt-1 flex items-center gap-1">
                       <Info className="w-3.5 h-3.5 shrink-0" />
-                      <span>{language === 'fa' ? 'تریدرها می‌توانند با خرید شارژ مجدد، روزهای بیشتری به اعتبار حساب خود اضافه فرمایند.' : 'Prepaid billing allows buying sequential top-ups to accumulate access duration.'}</span>
+                      <span>{language === 'ku' ? 'بازرگانان دەتوانن بە کڕینی باڵانس، ڕۆژی زیاتر بۆ ئەژمێرەکەیان زیاد بکەن.' : (language === 'fa' ? 'تریدرها می‌توانند با خرید شارژ مجدد، روزهای بیشتری به اعتبار حساب خود اضافه فرمایند.' : 'Prepaid billing allows buying sequential top-ups to accumulate access duration.')}</span>
                     </p>
                   </div>
                 )}
@@ -1285,7 +1319,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                 <div className="grid grid-cols-2 gap-3 items-center">
                   <div className="space-y-1">
                     <label className="text-[10.5px] font-semibold text-slate-400 block pb-1">
-                      {language === 'fa' ? 'قیمت پایه (USD)' : 'Base Price (USD)'}
+                      {language === 'ku' ? 'نرخی سەرەکی (USD)' : (language === 'fa' ? 'قیمت پایه (USD)' : 'Base Price (USD)')}
                     </label>
                     <input
                       type="number"
@@ -1307,7 +1341,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                         onChange={(e) => setNewSub({ ...newSub, hasOffer: e.target.checked })}
                         className="rounded bg-slate-950 border-white/10 text-blue-500 focus:ring-0 focus:ring-offset-0 cursor-pointer w-4 h-4"
                       />
-                      <span className="text-[11px] font-bold text-slate-300">{language === 'fa' ? 'افزودن تخفیف/آفر جذب' : 'Add Special Offer'}</span>
+                      <span className="text-[11px] font-bold text-slate-300">{language === 'ku' ? 'زیادکردنی داشکاندن/پێشنیاری تایبەت' : (language === 'fa' ? 'افزودن تخفیف/آفر جذب' : 'Add Special Offer')}</span>
                     </label>
                   </div>
                 </div>
@@ -1317,19 +1351,19 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                   <div className="p-3.5 bg-amber-500/5 border border-amber-500/10 rounded-2xl space-y-3">
                     <div className="grid grid-cols-2 gap-3 text-[11px]">
                       <div className="space-y-1">
-                        <span className="text-slate-400 block">{language === 'fa' ? 'نوع تخفیف استراتژی' : 'Campaign Goal'}</span>
+                        <span className="text-slate-400 block">{language === 'ku' ? 'جۆری پێشنیار' : (language === 'fa' ? 'نوع تخفیف استراتژی' : 'Campaign Goal')}</span>
                         <select
                           value={newSub.offerType}
                           onChange={(e) => setNewSub({ ...newSub, offerType: e.target.value })}
                           className="w-full bg-slate-950/80 border border-white/5 rounded-lg py-1 px-1.5 text-slate-200 focus:outline-none focus:border-amber-500/10 text-[10.5px] cursor-pointer"
                         >
-                          <option value="trial">{language === 'fa' ? 'اشتراک تست ارزان (New user)' : 'New User Trial'}</option>
-                          <option value="upgrade">{language === 'fa' ? 'مشوق ارتقا (Loyalty Upgrade)' : 'Upgrade Promotion'}</option>
+                          <option value="trial">{language === 'ku' ? 'ئابوونەی تاقیکاری هەرزان' : (language === 'fa' ? 'اشتراک تست ارزان (New user)' : 'New User Trial')}</option>
+                          <option value="upgrade">{language === 'ku' ? 'پێشنیاری بەرزکردنەوە' : (language === 'fa' ? 'مشوق ارتقا (Loyalty Upgrade)' : 'Upgrade Promotion')}</option>
                         </select>
                       </div>
 
                       <div className="space-y-1">
-                        <span className="text-slate-400 block">{language === 'fa' ? 'قیمت آفر ویژه (USD)' : 'Offer Price (USD)'}</span>
+                        <span className="text-slate-400 block">{language === 'ku' ? 'نرخی پێشنیاری تایبەت (USD)' : (language === 'fa' ? 'قیمت آفر ویژه (USD)' : 'Offer Price (USD)')}</span>
                         <input
                           type="number"
                           required
@@ -1344,8 +1378,8 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                     </div>
                     <p className="text-[9px] text-amber-300 leading-relaxed font-sans">
                       {newSub.offerType === 'trial' 
-                        ? (language === 'fa' ? '★ بازاریابی جذب: این آفر به کاربران اجازه می‌دهد دوره اول دسترسی را با تخفیف شروع کنند.' : '★ Acquisition Campaign: Grants newcomers a reduced first-period subscription trial to maximize checkout rates.')
-                        : (language === 'fa' ? '★ بازاریابی ارتقا: مشوق تریدرهای قدیمی برای مهاجرت به پلن VIP اونیگاما.' : '★ Upgrade Loyalty Bundle: Specifically targets active catalog users with exclusive upgrade bundles.')}
+                        ? (language === 'ku' ? '★ پێشنیاری تاقیکاری: ئەم ئۆفەرە ڕێگە بە بەکارهێنەرانی نوێ دەدات بە داشکاندنەوە دەستپێبکەن.' : (language === 'fa' ? '★ بازاریابی جذب: این آفر به کاربران اجازه می‌دهد دوره اول دسترسی را با تخفیف شروع کنند.' : '★ Acquisition Campaign: Grants newcomers a reduced first-period subscription trial to maximize checkout rates.'))
+                        : (language === 'ku' ? '★ پێشنیاری بەرزکردنەوە: هاندانی بازرگانان بۆ چوونە ناو پلانی VIPی ئۆنیگاما.' : (language === 'fa' ? '★ بازاریابی ارتقا: مشوق تریدرهای قدیمی برای مهاجرت به پلن VIP اونیگاما.' : '★ Upgrade Loyalty Bundle: Specifically targets active catalog users with exclusive upgrade bundles.'))}
                     </p>
                   </div>
                 )}
@@ -1357,13 +1391,13 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                     onClick={() => setIsCreatingSub(false)}
                     className="py-2 px-3.5 bg-slate-950 border border-white/5 rounded-xl block font-bold cursor-pointer text-[10.5px] text-slate-400 hover:text-white transition-all"
                   >
-                    {language === 'fa' ? 'بازگشت' : 'Cancel'}
+                    {language === 'ku' ? 'گەڕانەوە' : (language === 'fa' ? 'بازگشت' : 'Cancel')}
                   </button>
                   <button
                     type="submit"
                     className="py-2 px-5 bg-blue-600 hover:bg-blue-500 text-white border border-blue-500/20 font-black rounded-xl block cursor-pointer text-[11px] uppercase tracking-wider transition-all"
                   >
-                    {language === 'fa' ? 'حفظ و انتشار' : 'Publish Plan'}
+                    {language === 'ku' ? 'پاشەکەوت و بڵاوکردنەوە' : (language === 'fa' ? 'حفظ و انتشار' : 'Publish Plan')}
                   </button>
                 </div>
               </form>
@@ -1374,7 +1408,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
               <div className="space-y-3">
                 <div className="flex justify-between items-center">
                   <span className="text-[10px] text-slate-450 font-bold uppercase tracking-wider font-sans">
-                    {language === 'fa' ? `پلن‌های اشتراک فعال گوگل‌پلی (${customSubscriptions.length})` : `Custom App Store Subscriptions (${customSubscriptions.length})`}
+                    {language === 'ku' ? `پلانی ئابوونە چالاکەکانی گووگڵ‌پڵەی (${customSubscriptions.length})` : (language === 'fa' ? `پلن‌های اشتراک فعال گوگل‌پلی (${customSubscriptions.length})` : `Custom App Store Subscriptions (${customSubscriptions.length})`)}
                   </span>
                   
                   <button
@@ -1382,14 +1416,26 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                     onClick={() => setIsCreatingSub(true)}
                     className="text-[10px] font-bold text-blue-400 hover:text-blue-300 flex items-center gap-1 cursor-pointer"
                   >
-                    <span>{language === 'fa' ? '➕ پکیج جدید' : '➕ Create New'}</span>
+                    <span>{language === 'ku' ? '➕ پاکێجی نوێ' : (language === 'fa' ? '➕ پکیج جدید' : '➕ Create New')}</span>
                   </button>
                 </div>
 
                 <div className="grid grid-cols-1 gap-2 text-xs">
                   {customSubscriptions.map((sub) => {
-                    const typeLabel = sub.type === 'auto_renew' ? (language === 'fa' ? 'تمدید دوره‌ای' : 'Auto-Renew') : sub.type === 'prepaid' ? (language === 'fa' ? 'اعتباری (Prepaid)' : 'Prepaid') : (language === 'fa' ? 'کپن ارتقا' : 'Promo Bundle');
-                    const periodLabel = sub.period === 'week' ? (language === 'fa' ? '۱ هفته' : 'Weekly') : sub.period === 'month' ? (language === 'fa' ? '۱ ماهه' : 'Monthly') : sub.period === 'half_year' ? (language === 'fa' ? '۶ ماهه' : 'Semiannually') : sub.period === 'year' ? (language === 'fa' ? 'سالانه' : 'Annual') : (language === 'fa' ? 'مادام‌العمر' : 'Lifetime');
+                    const typeLabel = sub.type === 'auto_renew' 
+                      ? (language === 'ku' ? 'نوێبوونەوەی خولیی' : (language === 'fa' ? 'تمدید دوره‌ای' : 'Auto-Renew')) 
+                      : sub.type === 'prepaid' 
+                      ? (language === 'ku' ? 'باڵانس (Prepaid)' : (language === 'fa' ? 'اعتباری (Prepaid)' : 'Prepaid')) 
+                      : (language === 'ku' ? 'کۆپۆنی بەرزکردنەوە' : (language === 'fa' ? 'کپن ارتقا' : 'Promo Bundle'));
+                    const periodLabel = sub.period === 'week' 
+                      ? (language === 'ku' ? '١ هەفتە' : (language === 'fa' ? '۱ هفته' : 'Weekly')) 
+                      : sub.period === 'month' 
+                      ? (language === 'ku' ? '١ مانگ' : (language === 'fa' ? '۱ ماهه' : 'Monthly')) 
+                      : sub.period === 'half_year' 
+                      ? (language === 'ku' ? '٦ مانگ' : (language === 'fa' ? '۶ ماهه' : 'Semiannually')) 
+                      : sub.period === 'year' 
+                      ? (language === 'ku' ? 'ساڵانە' : (language === 'fa' ? 'سالانه' : 'Annual')) 
+                      : (language === 'ku' ? 'هەمیشەیی' : (language === 'fa' ? 'مادام‌العمر' : 'Lifetime'));
                     
                     return (
                       <div 
@@ -1411,11 +1457,11 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                           
                           <div className="flex items-center gap-3 text-[9.5px] text-slate-400 flex-wrap">
                             <span>
-                              {language === 'fa' ? `دوره: ${periodLabel}` : `Period: ${periodLabel}`}
+                              {language === 'ku' ? `ماوە: ${periodLabel}` : (language === 'fa' ? `دوره: ${periodLabel}` : `Period: ${periodLabel}`)}
                             </span>
                             {sub.type === 'prepaid' && (
                               <span>
-                                {language === 'fa' ? `شارژ اعتبار: ${sub.topupValue} روز` : `Top-up: ${sub.topupValue} days`}
+                                {language === 'ku' ? `باڵانس: ${sub.topupValue} ڕۆژ` : (language === 'fa' ? `شارژ اعتبار: ${sub.topupValue} روز` : `Top-up: ${sub.topupValue} days`)}
                               </span>
                             )}
                             <div className="flex items-center gap-1 font-mono text-white text-[11px]">
@@ -1437,16 +1483,16 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                             type="button"
                             onClick={() => handleInitiateCustomPurchase(sub)}
                             className="px-2.5 py-1.5 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 hover:from-blue-600/30 hover:to-indigo-650/30 text-blue-300 hover:text-white border border-blue-500/20 rounded-xl text-[10px] font-bold cursor-pointer transition-all active:scale-95 flex items-center gap-1"
-                            title={language === 'fa' ? 'شبیه‌سازی فرآیند خرید' : 'Simulate Purchase'}
+                            title={language === 'ku' ? 'تاقیکردنەوەی پرۆسەی کڕین' : (language === 'fa' ? 'شبیه‌سازی فرآیند خرید' : 'Simulate Purchase')}
                           >
-                            <span>{language === 'fa' ? 'تست خرید' : 'Test Buy'}</span>
+                            <span>{language === 'ku' ? 'تاقی کڕین' : (language === 'fa' ? 'تست خرید' : 'Test Buy')}</span>
                           </button>
                           
                           <button
                             type="button"
                             onClick={(e) => handleDeleteSubscription(sub.id, e)}
                             className="p-1.5 bg-[#1a0e10] hover:bg-red-500/15 text-red-400 rounded-xl transition-all cursor-pointer"
-                            title={language === 'fa' ? 'حذف طرح' : 'Delete'}
+                            title={language === 'ku' ? 'سڕینەوەی پلان' : (language === 'fa' ? 'حذف طرح' : 'Delete')}
                           >
                             <span className="text-xs">✕</span>
                           </button>
@@ -1464,7 +1510,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
           <div className="p-6 rounded-3xl glass-card glow-gold border border-amber-500/10 space-y-4">
             <h2 className="text-xs font-bold text-slate-300 tracking-wider uppercase flex items-center gap-1.5 border-b border-white/5 pb-3">
               <Download className="w-4 h-4 text-amber-400 shrink-0" />
-              <span>{language === 'fa' ? 'نصب نسخه وب اپلیکیشن اونیگاما (PWA)' : 'Install Onigama Web App (PWA)'}</span>
+              <span>{language === 'ku' ? 'داگرتنی وەشانی وێب ئەپڵیکەیشنی ئۆنیگاما (PWA)' : (language === 'fa' ? 'نصب نسخه وب اپلیکیشن اونیگاما (PWA)' : 'Install Onigama Web App (PWA)')}</span>
             </h2>
             
             <div className="space-y-3">
@@ -1474,12 +1520,14 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                 </div>
                 <div className="space-y-1 text-center sm:text-right min-w-0 flex-1">
                   <span className="text-xs font-black text-slate-100 block">
-                    {language === 'fa' ? 'وب اپلیکیشن اندروید، iOS و دسکتاپ' : 'Universal Progressive Web App (PWA)'}
+                    {language === 'ku' ? 'وێب ئەپڵیکەیشن بۆ ئەندرۆید، iOS و دیسکتاپ' : (language === 'fa' ? 'وب اپلیکیشن اندروید، iOS و دسکتاپ' : 'Universal Progressive Web App (PWA)')}
                   </span>
                   <span className="text-[10px] text-slate-400 block font-sans">
-                    {language === 'fa' 
-                      ? 'با نصب وب اپلیکیشن، دسترسی مستقیم آیکون برنامه همانند یک نرم‌افزار نیتیو روی صفحه گوشی شما قرار می‌گیرد.' 
-                      : 'Add to home screen for real-time market updates, premium signals, and native layout performance.'}
+                    {language === 'ku'
+                      ? 'بە دامەزراندنی وێب ئەپڵیکەیشن، ئایکۆنی بەرنامە وەک ئەپێکی ڕاستەقینە لەسەر شاشەی مۆبایلەکەت دادەنرێت.'
+                      : (language === 'fa' 
+                        ? 'با نصب وب اپلیکیشن، دسترسی مستقیم آیکون برنامه همانند یک نرم‌افزار نیتیو روی صفحه گوشی شما قرار می‌گیرد.' 
+                        : 'Add to home screen for real-time market updates, premium signals, and native layout performance.')}
                   </span>
                 </div>
               </div>
@@ -1488,9 +1536,11 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                 <div className="p-3 bg-emerald-500/10 border border-emerald-500/25 text-emerald-400 rounded-2xl text-center text-xs font-bold font-sans flex items-center justify-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
                   <span>
-                    {language === 'fa' 
-                      ? 'اکنون شما در حال استفاده از نسخه وب‌اپلیکیشن (PWA) اونیگاما هستید!' 
-                      : 'You are running the official Onigama PWA client! Fully optimized and offline-ready.'}
+                    {language === 'ku'
+                      ? 'ئێستا تۆ وەشانی وێب ئەپڵیکەیشنی (PWA) فەرمیی ئۆنیگاما بەکاردەهێنیت!'
+                      : (language === 'fa' 
+                        ? 'اکنون شما در حال استفاده از نسخه وب‌اپلیکیشن (PWA) اونیگاما هستید!' 
+                        : 'You are running the official Onigama PWA client! Fully optimized and offline-ready.')}
                   </span>
                 </div>
               ) : (
@@ -1503,48 +1553,60 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                       className="w-full py-3 bg-gradient-to-r from-amber-500 to-yellow-500 hover:from-amber-400 hover:to-yellow-400 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg active:scale-95 text-center flex items-center justify-center gap-2"
                     >
                       <Download className="w-4 h-4 text-slate-950" />
-                      <span>{language === 'fa' ? 'نصب مستقیم وب اپلیکیشن اونیگاما' : 'Install Onigama Web App'}</span>
+                      <span>{language === 'ku' ? 'داگرتنی ڕاستەوخۆی وێب ئەپڵیکەیشنی ئۆنیگاما' : (language === 'fa' ? 'نصب مستقیم وب اپلیکیشن اونیگاما' : 'Install Onigama Web App')}</span>
                     </button>
                   ) : (
                     <div className="p-3.5 bg-slate-950/60 rounded-2xl border border-white/5 space-y-2.5">
                       <span className="text-[10.5px] font-bold text-slate-300 block">
-                        {language === 'fa' ? 'ℹ️ راهنمای سریع راه‌اندازی و نصب:' : 'ℹ️ Platform Setup Guideline:'}
+                        {language === 'ku' ? 'ℹ️ ڕێبەری خێرای دامەزراندن:' : (language === 'fa' ? 'ℹ️ راهنمای سریع راه‌اندازی و نصب:' : 'ℹ️ Platform Setup Guideline:')}
                       </span>
                       
                       {pwaPlatform === 'ios' ? (
                         <div className="text-[10px] text-slate-400 leading-relaxed space-y-1 font-sans">
                           <p>
-                            {language === 'fa' 
-                              ? '١. در پایین صفحه آیفون خود دکمه اشتراک گذاری (Share 🔗) را انتخاب کنید.' 
-                              : '1. Tap the Share button (🔗) in your Safari app toolbar at the bottom.'}
+                            {language === 'ku'
+                              ? '١. لە خوارەوەی شاشەی ئایفۆنەکەت دوگمەی هاوبەشکردن (Share 🔗) دابگرە.'
+                              : (language === 'fa' 
+                                ? '١. در پایین صفحه آیفون خود دکمه اشتراک گذاری (Share 🔗) را انتخاب کنید.' 
+                                : '1. Tap the Share button (🔗) in your Safari app toolbar at the bottom.')}
                           </p>
                           <p>
-                            {language === 'fa' 
-                              ? '٢. به سمت پایین اسکرول کنید و گزینه "Add to Home Screen" را کلیک فرمایید.' 
-                              : '2. Scroll down and touch "Add to Home Screen" option.'}
+                            {language === 'ku'
+                              ? '٢. بەرەو خوارەوە بڕۆ و بژاردەی "Add to Home Screen" هەڵبژێرە.'
+                              : (language === 'fa' 
+                                ? '٢. به سمت پایین اسکرول کنید و گزینه "Add to Home Screen" را کلیک فرمایید.' 
+                                : '2. Scroll down and touch "Add to Home Screen" option.')}
                           </p>
                           <p>
-                            {language === 'fa' 
-                              ? '٣. در بالای صفحه دکمه "Add" را بزنید تا برنامه روی آیفون نصب شود.' 
-                              : '3. Press "Add" in the top corner to complete native PWA installation.'}
+                            {language === 'ku'
+                              ? '٣. لە سەرەوەی شاشە دوگمەی "Add" لێبدە بۆ تەواوکردنی دامەزراندن.'
+                              : (language === 'fa' 
+                                ? '٣. در بالای صفحه دکمه "Add" را بزنید تا برنامه روی آیفون نصب شود.' 
+                                : '3. Press "Add" in the top corner to complete native PWA installation.')}
                           </p>
                         </div>
                       ) : (
                         <div className="text-[10px] text-slate-400 leading-relaxed space-y-1 font-sans">
                           <p>
-                            {language === 'fa' 
-                              ? '١. منوی سه‌نقطه مرورگر کروم یا فایرفاکس خود را در بالا سمت راست لمس فرمایید.' 
-                              : '1. Open the browser menu (three dots in Chrome header/sidebar).'}
+                            {language === 'ku'
+                              ? '١. پەنجە بنێ بە مێنیوی سێ خاڵ لە سەرەوەی وێبگەڕەکەت.'
+                              : (language === 'fa' 
+                                ? '١. منوی سه‌نقطه مرورگر کروم یا فایرفاکس خود را در بالا سمت راست لمس فرمایید.' 
+                                : '1. Open the browser menu (three dots in Chrome header/sidebar).')}
                           </p>
                           <p>
-                            {language === 'fa' 
-                              ? '٢. گزینه "Install application" یا "Add to Home Screen" را انتخاب کنید.' 
-                              : '2. Select "Install app" or "Add to Home screen" to initialize download.'}
+                            {language === 'ku'
+                              ? '٢. بژاردەی "Install application" یان "Add to Home Screen" هەڵبژێرە.'
+                              : (language === 'fa' 
+                                ? '٢. گزینه "Install application" یا "Add to Home Screen" را انتخاب کنید.' 
+                                : '2. Select "Install app" or "Add to Home screen" to initialize download.')}
                           </p>
                           <p>
-                            {language === 'fa' 
-                              ? '٣. تصمیم خود را تایید کرده تا آیکون میانبر به برنامه‌هایتان اضافه شود.' 
-                              : '3. Tap Install or Add to create the launcher icon on your screen.'}
+                            {language === 'ku'
+                              ? '٣. بڕیارەکەت پشتڕاست بکەرەوە تاوەکو ئایکۆنەکە زیاد بکرێت بۆ سەر شاشە.'
+                              : (language === 'fa' 
+                                ? '٣. تصمیم خود را تایید کرده تا آیکون میانبر به برنامه‌هایتان اضافه شود.' 
+                                : '3. Tap Install or Add to create the launcher icon on your screen.')}
                           </p>
                         </div>
                       )}
@@ -1555,18 +1617,18 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                           if (navigator.share) {
                             navigator.share({
                               title: 'Onigama FX Trading App',
-                              text: language === 'fa' ? 'وب اپلیکیشن تحلیل و سیگنال طلا اونیگاما' : 'Onigama FX Trading Platform',
+                              text: language === 'ku' ? 'وێب ئەپڵیکەیشنی شیکاری و سیگناڵی ئۆنیگاما' : (language === 'fa' ? 'وب اپلیکیشن تحلیل و سیگنال طلا اونیگاما' : 'Onigama FX Trading Platform'),
                               url: window.location.href,
                             }).catch(() => {});
                           } else {
                             navigator.clipboard.writeText(window.location.href);
-                            alert(language === 'fa' ? 'لینک برنامه کپی شد! می‌توانید آن را در مرورگر خود باز کرده و به صفحه اصلی (Home Screen) اضافه کنید.' : 'Link copied to clipboard!');
+                            alert(language === 'ku' ? 'بەستەری بەرنامە کۆپیکرا! دەتوانی لە وێبگەڕەکەتدا بیکەیتەوە و زیادی بکەیت بۆ سەر شاشەی سەرەکی.' : (language === 'fa' ? 'لینک برنامه کپی شد! می‌توانید آن را در مرورگر خود باز کرده و به صفحه اصلی (Home Screen) اضافه کنید.' : 'Link copied to clipboard!'));
                           }
                         }}
                         className="w-full mt-2.5 py-2.5 bg-gradient-to-r from-amber-500/15 to-yellow-500/15 hover:from-amber-500/25 hover:to-yellow-500/25 border border-amber-500/30 text-amber-300 font-bold rounded-2xl text-[11px] flex items-center justify-center gap-2 cursor-pointer transition-all active:scale-95 shadow-sm"
                       >
                         <Share2 className="w-3.5 h-3.5 text-amber-400 shrink-0" />
-                        <span>{language === 'fa' ? 'اشتراک‌گذاری و نصب میانبر روی گوشی (آیفون / آندروید)' : 'Share & Save to Home Screen (iOS / Android)'}</span>
+                        <span>{language === 'ku' ? 'هاوبەشکردن و دانانی شۆرتکەت لەسەر مۆبایل (ئایفۆن / ئەندرۆید)' : (language === 'fa' ? 'اشتراک‌گذاری و نصب میانبر روی گوشی (آیفون / آندروید)' : 'Share & Save to Home Screen (iOS / Android)')}</span>
                       </button>
                     </div>
                   )}
@@ -1579,14 +1641,16 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
           <div className="p-6 rounded-3xl glass-card border border-white/5 space-y-4">
             <h2 className="text-xs font-bold text-slate-300 tracking-wider uppercase flex items-center gap-1.5 border-b border-white/5 pb-3">
               <Info className="w-4 h-4 text-blue-400 shrink-0" />
-              <span>{language === 'fa' ? 'درباره اکو سیستم معاملاتی اونیگاما' : 'Onigama FX Ecosystem'}</span>
+              <span>{language === 'ku' ? 'دەربارەی ئیکۆسیستەمی مامەڵەکردنی Onigama' : (language === 'fa' ? 'درباره اکو سیستم معاملاتی اونیگاما' : 'Onigama FX Ecosystem')}</span>
             </h2>
 
             <div className="text-xs text-slate-300 space-y-3.5 font-sans leading-relaxed">
               <p>
-                {language === 'fa'
-                  ? ' Onigama FX پلتفرمی هوشمند و چابک با دیزاینی متمایز و متمرکز، ساخته شده برای معامله‌گران جهت ردیابی نوسانات طلا و جفت‌ارزها، تحلیل ساختار بازار (SMC)، نقدینگی و ژورنال‌نویسی هوشمند معاملات است.'
-                  : 'Onigama FX provides modular analysis widgets, advanced SMC liquidity mapping, real-time gold price metrics, and integrated trading logs designed specifically for the Telegram Mini App ecosystem.'}
+                {language === 'ku'
+                  ? 'سەکۆی Onigama FX پلاتفۆرمێکی زیرەک و پێشکەوتووە بۆ شیکاریی زێڕ و جفتە دراوەکان، شیکاریی پێکهاتەی بازاڕ (SMC)، نەختینە و ژوورناڵی مامەڵەکان بە کوالێتییەکی بەرز.'
+                  : (language === 'fa'
+                    ? ' Onigama FX پلتفرمی هوشمند و چابک با دیزاینی متمایز و متمرکز، ساخته شده برای معامله‌گران جهت ردیابی نوسانات طلا و جفت‌ارزها، تحلیل ساختار بازار (SMC)، نقدینگی و ژورنال‌نویسی هوشمند معاملات است.'
+                    : 'Onigama FX provides modular analysis widgets, advanced SMC liquidity mapping, real-time gold price metrics, and integrated trading logs designed specifically for the Telegram Mini App ecosystem.')}
               </p>
 
               {/* NETWORK STATUS INFO BOARD */}
@@ -1643,7 +1707,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                       <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
                     </span>
-                    <span className="text-[10px] text-emerald-400 font-semibold">{language === 'fa' ? 'شبکه فعال است' : 'FX Data Feed Active'}</span>
+                    <span className="text-[10px] text-emerald-400 font-semibold">{language === 'ku' ? 'تۆڕ چالاکە' : (language === 'fa' ? 'شبکه فعال است' : 'FX Data Feed Active')}</span>
                   </div>
                   <span className="font-mono text-xs text-emerald-400">{pingMs}ms</span>
                 </div>
@@ -1658,12 +1722,14 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
           <div className="p-6 rounded-3xl bg-gradient-to-br from-slate-900/60 to-slate-950/60 border border-white/5">
             <h3 className="text-xs font-bold text-slate-300 flex items-center gap-2 mb-2 font-sans uppercase">
               <Cpu className="w-4 h-4 text-emerald-400 shrink-0" />
-              <span>{language === 'fa' ? 'راهنمای اجرای سیگنال ها' : 'Execution Guideline'}</span>
+              <span>{language === 'ku' ? 'ڕێبەری جێبەجێکردنی سیگناڵەکان' : (language === 'fa' ? 'راهنمای اجرای سیگنال ها' : 'Execution Guideline')}</span>
             </h3>
             <p className="text-[11px] text-slate-400 leading-relaxed font-sans mt-1">
-              {language === 'fa' 
-                ? 'تمامی سیگنال‌های ارائه شده در پنل داشبورد، یک راهنمای آماری تریدر است. حتما بر اساس پروفایل ریسک انتخاب شده و اهداف TP1 و TP2 سرمایه گذاری فرمایید.' 
-                : 'All system signals act as informative analytics trackers. Compound your profit parameters based on the selected risk profile LOT outputs.'}
+              {language === 'ku'
+                ? 'تەواوی سیگناڵە پێشکەشکراوەکان وەک ڕێبەری شیکارییە بۆ بازرگان. هەمیشە بەپێی قەبارەی ڕیسک و ئامانجەکانی TP1 و TP2 مامەڵە بکەن.'
+                : (language === 'fa' 
+                  ? 'تمامی سیگنال‌های ارائه شده در پنل داشبورد، یک راهنمای آماری تریدر است. حتما بر اساس پروفایل ریسک انتخاب شده و اهداف TP1 و TP2 سرمایه گذاری فرمایید.' 
+                  : 'All system signals act as informative analytics trackers. Compound your profit parameters based on the selected risk profile LOT outputs.')}
             </p>
           </div>
 
@@ -1671,12 +1737,14 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
           <div className="p-6 rounded-3xl bg-rose-500/5 border border-rose-500/10 space-y-2">
             <h4 className="text-xs font-bold text-rose-400 flex items-center gap-1.5 uppercase tracking-wide">
               <ShieldAlert className="w-4 h-4 text-rose-400 shrink-0" />
-              <span>{language === 'fa' ? 'سلب مسئولیت مهم معاملاتی' : 'Trading Risk Disclaimer'}</span>
+              <span>{language === 'ku' ? 'ڕاگەیاندنی گرنگی مەترسییەکانی بازاڕ' : (language === 'fa' ? 'سلب مسئولیت مهم معاملاتی' : 'Trading Risk Disclaimer')}</span>
             </h4>
             <p className="text-[11px] text-slate-300 leading-relaxed font-sans">
-              {language === 'fa' 
-                ? 'سلب مسئولیت: تمامی سیگنال‌ها، تحلیل‌های تکنیکال، و پیام‌های معاملاتی ارائه شده در مینی‌اپ اونیگاما صرفاً جنبه آموزشی و اطلاع‌رسانی دارند. بازارهای مالی و بویژه معاملات طلا و جفت‌ارزها دارای ریسک بسیار بالایی هستند و سودهای گذشته تضمین‌کننده سودهای آتی نخواهد بود. مینی‌اپ اونیگاما مسئولیتی در قبال سود یا ضرر ناشی از تصمیمات مالی مستقیم یا غیرمستقیم شما بر عهده نمی‌گیرد.'
-                : 'Disclaimer: All trading signals, technical analysis, and indicators provided within the Onigama FX platform are strictly for informational and educational purposes. Financial markets, especially gold and foreign exchange (Forex), carry a high level of risk and past performance is not indicative of future results. Onigama FX accepts no liability for any financial gains or losses incurred directly or indirectly as a result of using this application.'}
+              {language === 'ku'
+                ? 'ئاگاداری: هەموو سیگناڵەکان، شیکارییە تەکنیکییەکان و نیشاندەرەکان تەنها بۆ مەبەستی پەروەردەیی و زانیارین. بازاڕە دارایییەکان، بەتایبەت زێڕ و دراوە بیانییەکان، مەترسییەکی زۆریان هەیە و ئەنجامەکانی پێشوو گەرەنتیی قازانجی داهاتوو ناکەن. ئۆنیگاما بەرپرسیار نییە لە هەر زیانێک کە لە ئەنجامی بڕیارە دارایییەکانتەوە ڕووبدات.'
+                : (language === 'fa' 
+                  ? 'سلب مسئولیت: تمامی سیگنال‌ها، تحلیل‌های تکنیکال، و پیام‌های معاملاتی ارائه شده در مینی‌اپ اونیگاما صرفاً جنبه آموزشی و اطلاع‌رسانی دارند. بازارهای مالی و بویژه معاملات طلا و جفت‌ارزها دارای ریسک بسیار بالایی هستند و سودهای گذشته تضمین‌کننده سودهای آتی نخواهد بود. مینی‌اپ اونیگاما مسئولیتی در قبال سود یا ضرر ناشی از تصمیمات مالی مستقیم یا غیرمستقیم شما بر عهده نمی‌گیرد.'
+                  : 'Disclaimer: All trading signals, technical analysis, and indicators provided within the Onigama FX platform are strictly for informational and educational purposes. Financial markets, especially gold and foreign exchange (Forex), carry a high level of risk and past performance is not indicative of future results. Onigama FX accepts no liability for any financial gains or losses incurred directly or indirectly as a result of using this application.')}
             </p>
           </div>
 
@@ -1741,7 +1809,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
 
               {/* Price Details */}
               <div className="flex justify-between items-baseline py-1">
-                <span className="text-[11px] text-slate-400 font-sans">{language === 'fa' ? 'قیمت اشتراک تکی:' : 'Subscription Price:'}</span>
+                <span className="text-[11px] text-slate-400 font-sans">{language === 'ku' ? 'نرخی ئابوونە:' : (language === 'fa' ? 'قیمت اشتراک تکی:' : 'Subscription Price:')}</span>
                 <span className="text-lg font-black font-mono text-white">
                   {selectedProductId.startsWith('custom_') ? (
                     (() => {
@@ -1774,23 +1842,23 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                     ✓
                   </div>
                   <span className="text-xs font-bold text-emerald-400 block font-sans">
-                    {language === 'fa' ? 'پرداخت گوگل‌پلی تأیید شد!' : 'Security Verification Clean!'}
+                    {language === 'ku' ? 'پارەدانی گووگڵ‌پڵەی پشتڕاستکرایەوە!' : (language === 'fa' ? 'پرداخت گوگل‌پلی تأیید شد!' : 'Security Verification Clean!')}
                   </span>
                   <span className="text-[10px] text-slate-400 font-sans">
-                    {language === 'fa' ? 'امکانات طلایی هم اکنون در سراسر برنامه فعال است.' : 'VIP entitlements are now bound to your account.'}
+                    {language === 'ku' ? 'تایبەتمەندییە زێڕینەکان ئێستا لە تەواوی بەرنامەدا چالاک کران.' : (language === 'fa' ? 'امکانات طلایی هم اکنون در سراسر برنامه فعال است.' : 'VIP entitlements are now bound to your account.')}
                   </span>
                   <button
                     onClick={() => setShowPlayStoreModal(false)}
                     className="mt-3 py-1.5 px-3 bg-emerald-500 text-slate-950 font-bold rounded-xl text-[10px] hover:bg-emerald-400 active:scale-95 transition-all w-full cursor-pointer"
                   >
-                    {language === 'fa' ? 'بستن درگاه و بازگشت' : 'Back to Monitor'}
+                    {language === 'ku' ? 'داخستنی دەروازە و گەڕانەوە' : (language === 'fa' ? 'بستن درگاه و بازگشت' : 'Back to Monitor')}
                   </button>
                 </div>
               ) : (
                 <div className="space-y-4 font-sans">
                   {/* Payment profile simulation options */}
                   <div className="space-y-2">
-                    <span className="text-[9px] text-[#8e8e93] font-bold block uppercase tracking-wider font-sans">{language === 'fa' ? 'روش شبیه‌سازی پرداخت گوگل' : 'Google Payment Selector'}</span>
+                    <span className="text-[9px] text-[#8e8e93] font-bold block uppercase tracking-wider font-sans">{language === 'ku' ? 'شێوازی تاقیکردنەوەی پارەدانی گووگڵ' : (language === 'fa' ? 'روش شبیه‌سازی پرداخت گوگل' : 'Google Payment Selector')}</span>
                     <div className="bg-[#2c2c2e] p-3 rounded-xl flex items-center justify-between border border-white/5 font-sans">
                       <div className="flex items-center gap-2">
                         <div className="w-11 h-6 bg-slate-950 rounded border border-white/10 flex items-center justify-center font-mono font-bold text-[8px] text-slate-400">G Pay</div>
@@ -1823,7 +1891,7 @@ export function SettingsPage({ language, setLanguage, onThemeChange }: SettingsP
                     }}
                     className="w-full py-3 bg-emerald-600 hover:bg-emerald-550 text-slate-950 font-black rounded-2xl text-xs uppercase tracking-wider transition-all cursor-pointer shadow-lg active:scale-95 text-center block"
                   >
-                    {language === 'fa' ? 'تایید نهایی و اشتراک تستی' : 'Subscribe • Test Checkout'}
+                    {language === 'ku' ? 'پشتڕاستکردنەوە و ئابوونەی تاقیکاری' : (language === 'fa' ? 'تایید نهایی و اشتراک تستی' : 'Subscribe • Test Checkout')}
                   </button>
                 </div>
               )}

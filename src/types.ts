@@ -55,12 +55,16 @@ export interface MarketStats {
   lossCount: number;
 }
 
+export type Language = 'fa' | 'en' | 'ku';
+
 export interface UserSettings {
   notifications: boolean;
   soundEnabled: boolean;
-  language: 'fa' | 'en';
+  language: Language;
   theme: 'dark' | 'glass';
   riskTolerance: 'low' | 'medium' | 'high';
+  signalCornerNotification?: boolean;
+  signalSoundAlert?: boolean;
 }
 
 export interface UserProfile {

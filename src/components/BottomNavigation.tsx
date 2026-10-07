@@ -1,53 +1,54 @@
 import { Home, BarChart2, Flame, Brain, BookOpen, Settings, Sparkles } from 'lucide-react';
+import { Language } from '../types';
 
 interface BottomNavigationProps {
   activeTab: string;
   setActiveTab: (tab: string) => void;
-  language: 'fa' | 'en';
+  language: Language;
 }
 
 export function BottomNavigation({ activeTab, setActiveTab, language }: BottomNavigationProps) {
   const tabs = [
     {
       id: 'home',
-      label: language === 'fa' ? 'خانه' : 'Home',
+      label: language === 'ku' ? 'سەرەکی' : (language === 'fa' ? 'خانه' : 'Home'),
       icon: Home,
     },
     {
       id: 'analysis',
-      label: language === 'fa' ? 'تحلیل' : 'Analysis',
+      label: language === 'ku' ? 'شیکاری' : (language === 'fa' ? 'تحلیل' : 'Analysis'),
       icon: BarChart2,
     },
     {
       id: 'fundamental',
-      label: language === 'fa' ? 'فاندامنتال' : 'Fund',
+      label: language === 'ku' ? 'فەندەمێنتەڵ' : (language === 'fa' ? 'فاندامنتال' : 'Fund'),
       icon: Flame,
     },
     {
       id: 'catalog',
-      label: language === 'fa' ? 'کاتالوگ' : 'Specs',
+      label: language === 'ku' ? 'کەتەلۆگ' : (language === 'fa' ? 'کاتالوگ' : 'Specs'),
       icon: Sparkles,
     },
     {
       id: 'psychology',
-      label: language === 'fa' ? 'روانشناسی' : 'Mindset',
+      label: language === 'ku' ? 'دەروونناسی' : (language === 'fa' ? 'روانشناسی' : 'Mindset'),
       icon: Brain,
     },
     {
       id: 'journal',
-      label: language === 'fa' ? 'ژورنال' : 'Journal',
+      label: language === 'ku' ? 'ژوورناڵ' : (language === 'fa' ? 'ژورنال' : 'Journal'),
       icon: BookOpen,
     },
     {
       id: 'settings',
-      label: language === 'fa' ? 'تنظیمات' : 'Settings',
+      label: language === 'ku' ? 'ڕێکخستن' : (language === 'fa' ? 'تنظیمات' : 'Settings'),
       icon: Settings,
     },
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#070f17]/30 backdrop-blur-xl border-t border-white/10 shadow-xl px-2 py-3 pb-safe">
-      <div className="max-w-md md:max-w-xl lg:max-w-2xl mx-auto flex justify-around items-center">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-[#070f17]/90 backdrop-blur-2xl border-t border-white/10 shadow-[0_-10px_35px_rgba(0,0,0,0.6)] px-1 sm:px-3 pt-2 pb-[max(8px,env(safe-area-inset-bottom,0px))]" style={{ WebkitBackdropFilter: 'blur(16px)' }}>
+      <div className="w-full max-w-md md:max-w-xl lg:max-w-2xl mx-auto flex justify-around items-center">
         {tabs.map((tab) => {
           const IconComponent = tab.icon;
           const isActive = activeTab === tab.id;
@@ -56,7 +57,7 @@ export function BottomNavigation({ activeTab, setActiveTab, language }: BottomNa
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
-              className={`flex flex-col items-center justify-center flex-1 py-1.5 px-1 sm:px-3 rounded-2xl transition-all duration-300 relative ${
+              className={`flex flex-col items-center justify-center flex-1 py-1 px-0.5 sm:px-2 rounded-2xl transition-all duration-300 relative ${
                 isActive 
                   ? 'text-white font-bold scale-105' 
                   : 'text-slate-400 hover:text-slate-300'

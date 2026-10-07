@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Trade, MarketStats } from '../types';
+import { Trade, MarketStats, Language } from '../types';
 import { StorageManager } from '../services/api';
 import { 
   BookOpen, 
@@ -24,7 +24,7 @@ import {
 } from 'lucide-react';
 
 interface JournalPageProps {
-  language: 'fa' | 'en';
+  language: Language;
   onNavigate?: (tab: string) => void;
 }
 
@@ -86,24 +86,26 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
 
   const exportToCSV = async () => {
     if (trades.length === 0) {
-      alert(language === 'fa' 
-        ? '⚠️ هیچ معامله‌ای در ژورنال شما برای خروجی گرفتن یافت نشد. ابتدا چند معامله ثبت کنید.' 
-        : '⚠️ No trades found in your journal to export. Please log some trades first.');
+      alert(language === 'ku'
+        ? '⚠️ هیچ مامەڵەیەک لە ژوورناڵەکەتدا بۆ دەرهێنان نەدۆزرایەوە. تکایە سەرەتا چەند مامەڵەیەک تۆمار بکە.'
+        : (language === 'fa' 
+          ? '⚠️ هیچ معامله‌ای در ژورنال شما برای خروجی گرفتن یافت نشد. ابتدا چند معامله ثبت کنید.' 
+          : '⚠️ No trades found in your journal to export. Please log some trades first.'));
       return;
     }
 
     // Set standard columns for the spreadsheet
     const headers = [
-      language === 'fa' ? 'شناسه معامله' : 'Trade ID',
-      language === 'fa' ? 'تاریخ و زمان ثبت' : 'Date & Time',
-      language === 'fa' ? 'نماد معاملاتی' : 'Symbol',
-      language === 'fa' ? 'نوع معامله' : 'Type',
-      language === 'fa' ? 'حجم (لات)' : 'Volume (Lots)',
-      language === 'fa' ? 'قیمت ورود' : 'Entry Price',
-      language === 'fa' ? 'قیمت خروج' : 'Exit Price',
-      language === 'fa' ? 'سود/ضرر دلار' : 'Profit/Loss (USD)',
-      language === 'fa' ? 'نتیجه معامله' : 'Outcome',
-      language === 'fa' ? 'یادداشت‌ها' : 'Journal Notes'
+      language === 'ku' ? 'ناسنامەی مامەڵە' : (language === 'fa' ? 'شناسه معامله' : 'Trade ID'),
+      language === 'ku' ? 'بەروار و کاتی تۆمار' : (language === 'fa' ? 'تاریخ و زمان ثبت' : 'Date & Time'),
+      language === 'ku' ? 'هێمای مامەڵە' : (language === 'fa' ? 'نماد معاملاتی' : 'Symbol'),
+      language === 'ku' ? 'جۆری مامەڵە' : (language === 'fa' ? 'نوع معامله' : 'Type'),
+      language === 'ku' ? 'قەبارە (لات)' : (language === 'fa' ? 'حجم (لات)' : 'Volume (Lots)'),
+      language === 'ku' ? 'نرخی چوونەژوور' : (language === 'fa' ? 'قیمت ورود' : 'Entry Price'),
+      language === 'ku' ? 'نرخی دەرچوون' : (language === 'fa' ? 'قیمت خروج' : 'Exit Price'),
+      language === 'ku' ? 'قازانج/زیان دۆلار' : (language === 'fa' ? 'سود/ضرر دلار' : 'Profit/Loss (USD)'),
+      language === 'ku' ? 'ئەنجامی مامەڵە' : (language === 'fa' ? 'نتیجه معامله' : 'Outcome'),
+      language === 'ku' ? 'تێبینییەکان' : (language === 'fa' ? 'یادداشت‌ها' : 'Journal Notes')
     ];
 
     const rows = trades.map(t => [
@@ -119,7 +121,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
       (t.notes || '').replace(/"/g, '""').replace(/,/g, ';')
     ]);
 
-    // Prepend UTF-8 BOM so Excel decodes Persian/Farsi letters perfectly
+    // Prepend UTF-8 BOM so Excel decodes Persian/Kurdish letters perfectly
     const csvContent = "\uFEFF" + [
       headers.join(','),
       ...rows.map(row => row.map(val => `"${val}"`).join(','))
@@ -136,7 +138,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
           await navigator.share({
             files: [file],
             title: 'Onigama Trading Ledger Statement',
-            text: language === 'fa' ? 'گزارش معاملات اونیگاما (CSV / اکسل)' : 'Onigama Trading Statement CSV'
+            text: language === 'ku' ? 'ڕاپۆرتی مامەڵەکانی ئۆنیگاما (CSV / ئێکسڵ)' : (language === 'fa' ? 'گزارش معاملات اونیگاما (CSV / اکسل)' : 'Onigama Trading Statement CSV')
           });
           return;
         }
@@ -198,7 +200,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
     }).join('');
 
     const htmlContent = `<!DOCTYPE html>
-<html lang="${language === 'fa' ? 'fa' : 'en'}" dir="${language === 'fa' ? 'rtl' : 'ltr'}">
+<html lang="${language === 'ku' ? 'ku' : (language === 'fa' ? 'fa' : 'en')}" dir="${language === 'ku' || language === 'fa' ? 'rtl' : 'ltr'}">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -252,11 +254,11 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
     <div class="flex items-center gap-2">
       <div class="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse"></div>
       <span class="text-xs text-slate-350 font-medium font-sans">
-        ${language === 'fa' ? 'سند کارنامه آماده چاپ و ذخیره به عنوان فایل PDF است.' : 'Statement ready for direct printing or PDF saving.'}
+        ${language === 'ku' ? 'بەڵگەنامەی کارنامە ئامادەیە بۆ چاپکردن یاخود پاشەکەوتکردن وەک فایلی PDF.' : (language === 'fa' ? 'سند کارنامه آماده چاپ و ذخیره به عنوان فایل PDF است.' : 'Statement ready for direct printing or PDF saving.')}
       </span>
     </div>
     <button onclick="window.print()" class="w-full sm:w-auto px-5 py-2.5 bg-gradient-to-tr from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-sans font-black text-xs rounded-2xl flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md active:scale-95">
-      🖨️ ${language === 'fa' ? 'چاپ یا دریافت فایل PDF' : 'Print or Save as PDF'}
+      🖨️ ${language === 'ku' ? 'چاپکردن یاخود وەرگرتنی فایلی PDF' : (language === 'fa' ? 'چاپ یا دریافت فایل PDF' : 'Print or Save as PDF')}
     </button>
   </div>
 
@@ -273,7 +275,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
           <span class="text-lg font-black tracking-wider text-white print-invert">ONIGAMA TRADERS SYSTEM</span>
         </div>
         <p class="text-[10px] text-slate-500 tracking-widest uppercase font-mono">
-          ${language === 'fa' ? 'بخش حسابرسی و ارزیابی عملکرد استراتژی معاملاتی' : 'Audited Institutional Performance & Strategy Ledger'}
+          ${language === 'ku' ? 'بەشی وردبینی و هەڵسەنگاندنی ئەنجامەکانی بازرگانی' : (language === 'fa' ? 'بخش حسابرسی و ارزیابی عملکرد استراتژی معاملاتی' : 'Audited Institutional Performance & Strategy Ledger')}
         </p>
       </div>
 
@@ -286,44 +288,44 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
     </div>
 
     <!-- SUMMARY GRID CARDS -->
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" dir="${language === 'fa' ? 'rtl' : 'ltr'}">
+    <div class="grid grid-cols-2 lg:grid-cols-4 gap-4" dir="${language === 'ku' || language === 'fa' ? 'rtl' : 'ltr'}">
       <div class="p-4 rounded-2xl bg-white/2 border border-white/5 print-bg print-border">
-        <span class="text-[9.5px] uppercase tracking-wider text-slate-500 block font-bold">${language === 'fa' ? 'سرمایه اولیه ترازنامه' : 'Starting Capital'}</span>
+        <span class="text-[9.5px] uppercase tracking-wider text-slate-500 block font-bold">${language === 'ku' ? 'سەرمایەی سەرەتایی' : (language === 'fa' ? 'سرمایه اولیه ترازنامه' : 'Starting Capital')}</span>
         <span class="text-base font-bold text-slate-300 mt-1 block print-invert">$${startCap.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
       </div>
 
       <div class="p-4 rounded-2xl bg-white/2 border border-white/5 print-bg print-border">
-        <span class="text-[9.5px] uppercase tracking-wider text-slate-500 block font-bold">${language === 'fa' ? 'سود/ضرر بازده خالص' : 'Total Net Profit/Loss'}</span>
+        <span class="text-[9.5px] uppercase tracking-wider text-slate-500 block font-bold">${language === 'ku' ? 'کۆی قازانج/زیانی پوخت' : (language === 'fa' ? 'سود/ضرر بازده خالص' : 'Total Net Profit/Loss')}</span>
         <span class="text-base font-black mt-1 block print-invert ${stats.totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}">
           ${stats.totalProfit >= 0 ? '+' : ''}$${stats.totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
         </span>
       </div>
 
       <div class="p-4 rounded-2xl bg-white/2 border border-white/5 print-bg print-border">
-        <span class="text-[9.5px] uppercase tracking-wider text-slate-500 block font-bold">${language === 'fa' ? 'ارزش نهایی پورتفو' : 'Final Balance Value'}</span>
+        <span class="text-[9.5px] uppercase tracking-wider text-slate-500 block font-bold">${language === 'ku' ? 'سەرمایەی کۆتایی' : (language === 'fa' ? 'ارزش نهایی پورتفو' : 'Final Balance Value')}</span>
         <span class="text-base font-black text-white mt-1 block print-invert">$${finalBalanceValue.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
       </div>
 
       <div class="p-4 rounded-2xl bg-white/2 border border-white/5 print-bg print-border">
-        <span class="text-[9.5px] uppercase tracking-wider text-slate-500 block font-bold">${language === 'fa' ? 'نسبت معاملات موفق' : 'Success Win Rate'}</span>
+        <span class="text-[9.5px] uppercase tracking-wider text-slate-500 block font-bold">${language === 'ku' ? 'ڕێژەی سەرکەوتن' : (language === 'fa' ? 'نسبت معاملات موفق' : 'Success Win Rate')}</span>
         <span class="text-base font-bold text-emerald-400 mt-1 block print-invert">${stats.winRate}% (Wins ${stats.winCount}/${stats.tradesCount})</span>
       </div>
     </div>
 
     <!-- ADVANCED INDICES -->
-    <div class="p-4 bg-white/2 border border-white/5 rounded-2xl print-bg print-border" dir="${language === 'fa' ? 'rtl' : 'ltr'}">
-      <h4 class="text-[10px] font-black tracking-wider text-slate-400 uppercase mb-3 font-mono">${language === 'fa' ? '📌 شاخص‌های پیشرفته سودآوری سیستم' : '📌 PERFORMANCE MULTIPLIER INDICES'}</h4>
+    <div class="p-4 bg-white/2 border border-white/5 rounded-2xl print-bg print-border" dir="${language === 'ku' || language === 'fa' ? 'rtl' : 'ltr'}">
+      <h4 class="text-[10px] font-black tracking-wider text-slate-400 uppercase mb-3 font-mono">${language === 'ku' ? '📌 پێوەرە پێشکەوتووەکانی قازانج' : (language === 'fa' ? '📌 شاخص‌های پیشرفته سودآوری سیستم' : '📌 PERFORMANCE MULTIPLIER INDICES')}</h4>
       <div class="grid grid-cols-3 gap-4 text-center">
         <div>
-          <span class="text-[9px] text-slate-500 block">${language === 'fa' ? 'ضریب سودآوری (Profit Factor)' : 'Profit Factor'}</span>
+          <span class="text-[9px] text-slate-500 block">${language === 'ku' ? 'فاکتەری قازانج (Profit Factor)' : (language === 'fa' ? 'ضریب سودآوری (Profit Factor)' : 'Profit Factor')}</span>
           <span class="text-xs font-bold text-slate-200 font-mono print-invert">${profitFactor}</span>
         </div>
         <div style="border-left: 1px solid rgba(255,255,255,0.06); border-right: 1px solid rgba(255,255,255,0.06);" class="print-border">
-          <span class="text-[9px] text-slate-500 block">${language === 'fa' ? 'میانگین سود در هر معامله' : 'Avg Profit Per Trade'}</span>
+          <span class="text-[9px] text-slate-500 block">${language === 'ku' ? 'تێکڕای قازانج لە هەر مامەڵەیەکدا' : (language === 'fa' ? 'میانگین سود در هر معامله' : 'Avg Profit Per Trade')}</span>
           <span class="text-xs font-bold font-mono print-invert ${parseFloat(avgProfitPerTrade) >= 0 ? 'text-emerald-400' : 'text-rose-455'}">$${parseFloat(avgProfitPerTrade).toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
         </div>
         <div>
-          <span class="text-[9px] text-slate-500 block">${language === 'fa' ? 'حجم کل قراردادهای اسمی' : 'Total Traded Volumes'}</span>
+          <span class="text-[9px] text-slate-500 block">${language === 'ku' ? 'کۆی قەبارەی مامەڵەکان' : (language === 'fa' ? 'حجم کل قراردادهای اسمی' : 'Total Traded Volumes')}</span>
           <span class="text-xs font-bold text-slate-200 font-mono print-invert">${totalVolumeTraded} Lots</span>
         </div>
       </div>
@@ -331,7 +333,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
 
     <!-- LEDGER TABLE -->
     <div class="space-y-3">
-      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono block print-invert">${language === 'fa' ? 'لیست تراکنش‌های ثبت‌شده (دفتر کل):' : 'AUDITED HISTORICAL JOURNAL LEDGER:'}</span>
+      <span class="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono block print-invert">${language === 'ku' ? 'لیستی مامەڵە تۆمارکراوەکان (دەفتەری گشتی):' : (language === 'fa' ? 'لیست تراکنش‌های ثبت‌شده (دفتر کل):' : 'AUDITED HISTORICAL JOURNAL LEDGER:')}</span>
       <div class="w-full overflow-x-auto rounded-2xl border border-white/5 print-border">
         <table class="w-full min-w-[680px] text-left border-collapse text-xs font-mono" style="direction: ltr;">
           <thead>
@@ -354,21 +356,23 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
     </div>
 
     <!-- SEAL & SIGNATURE FOOTER -->
-    <div class="pt-10 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-6 print-border" dir="${language === 'fa' ? 'rtl' : 'ltr'}">
+    <div class="pt-10 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-6 print-border" dir="${language === 'ku' || language === 'fa' ? 'rtl' : 'ltr'}">
       <div class="space-y-1 text-center sm:text-right">
         <div class="flex items-center gap-1.5 justify-center sm:justify-start">
           <span class="text-amber-500">🏆</span>
-          <span class="text-[11px] font-black text-slate-200 uppercase tracking-wider print-invert">${language === 'fa' ? 'مورد ممیزی و تایید رسمی سیستم فام Onigama' : 'Onigama Audited Strategy Certification'}</span>
+          <span class="text-[11px] font-black text-slate-200 uppercase tracking-wider print-invert">${language === 'ku' ? 'پشتڕاستکراوە لەلایەن سیستەمی فەرمیی Onigama' : (language === 'fa' ? 'مورد ممیزی و تایید رسمی سیستم فام Onigama' : 'Onigama Audited Strategy Certification')}</span>
         </div>
         <p class="text-[9.5px] text-slate-500 leading-relaxed max-w-lg font-sans">
-          ${language === 'fa'
-            ? 'این گزارش تراز معتبر بر اساس معاملات آزمایشی و شبیه‌سازی کلاینت بصورت محلی محاسبه و تایید شده است. به عنوان تاییدیه معتبر معاملاتی Onigama صادر می‌گردد.'
-            : 'This certified performance ledger represents offline local sandbox testing logged actions. Issued by Onigama Core Engine Security, conforming completely with platform trading rules.'}
+          ${language === 'ku'
+            ? 'ئەم ڕاپۆرتە فەرمییە لەسەر بنەمای مامەڵە تۆمارکراوەکانی بەکارهێنەر لە سەکۆی ئۆنیگاما بە شێوەیەکی خۆجێیی پشتڕاستکراوەتەوە.'
+            : (language === 'fa'
+              ? 'این گزارش تراز معتبر بر اساس معاملات آزمایشی و شبیه‌سازی کلاینت بصورت محلی محاسبه و تایید شده است. به عنوان تاییدیه معتبر معاملاتی Onigama صادر می‌گردد.'
+              : 'This certified performance ledger represents offline local sandbox testing logged actions. Issued by Onigama Core Engine Security, conforming completely with platform trading rules.')}
         </p>
       </div>
 
       <div class="border-2 border-dashed border-emerald-500/40 p-3.5 rounded-2xl text-center rotate-3 scale-95 select-none shrink-0 font-mono">
-        <div class="text-[8px] font-black text-emerald-500/60 uppercase tracking-widest">${language === 'fa' ? 'کنترل سیستم‌های مالی' : 'FINANCIAL SYSTEMS CHECK'}</div>
+        <div class="text-[8px] font-black text-emerald-500/60 uppercase tracking-widest">${language === 'ku' ? 'پشکنینی سیستەمی دارایی' : (language === 'fa' ? 'کنترل سیستم‌های مالی' : 'FINANCIAL SYSTEMS CHECK')}</div>
         <div class="text-sm font-black text-emerald-400 my-0.5 tracking-tight">★ VERIFIED PASSED ★</div>
         <div class="text-[8px] font-semibold text-slate-500">${new Date().toISOString().split('T')[0]} ONIGAMA-Q</div>
       </div>
@@ -389,7 +393,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
           await navigator.share({
             files: [file],
             title: 'Onigama Official Performance Statement',
-            text: language === 'fa' ? 'کارنامه معاملاتی اونیگاما' : 'Onigama Trading Ledger Statement'
+            text: language === 'ku' ? 'ڕاپۆرتی فەرمیی مامەڵەکانی ئۆنیگاما' : (language === 'fa' ? 'کارنامه معاملاتی اونیگاما' : 'Onigama Trading Ledger Statement')
           });
           return;
         }
@@ -538,7 +542,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
   };
 
   const handleClearAllTrades = () => {
-    if (confirm(language === 'fa' ? 'آیا از پاک کردن کامل ژورنال معاملات اطمینان دارید؟' : 'Are you sure you want to clear your trade journal history?')) {
+    if (confirm(language === 'ku' ? 'ئایا دڵنیایت لە سڕینەوەی تەواوی مێژووی ژوورناڵی مامەڵەکانت؟' : (language === 'fa' ? 'آیا از پاک کردن کامل ژورنال معاملات اطمینان دارید؟' : 'Are you sure you want to clear your trade journal history?'))) {
       setTrades([]);
       StorageManager.saveTrades([]);
       setStats(StorageManager.getStats([]));
@@ -551,17 +555,19 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
     return matchOutcome && matchType;
   });
 
+  const isRtl = language === 'fa' || language === 'ku';
+
   return (
     <div className="space-y-6 pb-20">
       
       {/* HEADER ROW */}
-      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+      <div className="flex flex-col sm:flex-row justify-between items-stretch sm:items-center gap-4" dir={isRtl ? 'rtl' : 'ltr'}>
         <div>
           <h1 className="text-xl font-bold text-white tracking-wide">
-            {language === 'fa' ? 'ژورنال معاملاتی Onigama' : 'Trading Journal'}
+            {language === 'ku' ? 'ژوورناڵی بازرگانی Onigama' : (language === 'fa' ? 'ژورنال معاملاتی Onigama' : 'Trading Journal')}
           </h1>
           <p className="text-xs text-slate-400 font-mono">
-            {language === 'fa' ? 'آمار کل و تحلیل عملکرد شخصی' : 'Track and optimize your trading history'}
+            {language === 'ku' ? 'تۆماری گشتی و شیکاریی ئەنجامی کەسی' : (language === 'fa' ? 'آمار کل و تحلیل عملکرد شخصی' : 'Track and optimize your trading history')}
           </p>
         </div>
         
@@ -573,7 +579,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
               className="flex-1 sm:flex-initial py-2.5 px-3.5 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold text-xs flex items-center justify-center gap-1.5 cursor-pointer transition-all border border-amber-500/20 shadow-lg shadow-amber-950/20 active:scale-95"
             >
               <FileText className="w-3.5 h-3.5 text-amber-100 shrink-0" />
-              <span>{language === 'fa' ? 'کارنامه رسمی' : 'Official Statement'}</span>
+              <span>{language === 'ku' ? 'ڕاپۆرتی فەرمی' : (language === 'fa' ? 'کارنامه رسمی' : 'Official Statement')}</span>
             </button>
           )}
 
@@ -588,8 +594,8 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
               <Plus className="w-3.5 h-3.5 shrink-0" />
             )}
             <span>
-              {language === 'fa' ? 'ثبت معامله' : 'Log Trade'}
-              {!isVip && (language === 'fa' ? ' (ویژه)' : ' (VIP)')}
+              {language === 'ku' ? 'تۆمارکردنی مامەڵە' : (language === 'fa' ? 'ثبت معامله' : 'Log Trade')}
+              {!isVip && (language === 'ku' ? ' (VIP)' : (language === 'fa' ? ' (ویژه)' : ' (VIP)'))}
             </span>
           </button>
         </div>
@@ -602,18 +608,18 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
         <div className="lg:col-span-5 space-y-6">
           
           {/* DETAILED STATS ROW */}
-          <div className="p-5 rounded-3xl glass-card glow-blue shadow-lg relative" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+          <div className="p-5 rounded-3xl glass-card glow-blue shadow-lg relative" dir={isRtl ? 'rtl' : 'ltr'}>
         <div className="absolute top-0 right-0 w-32 h-32 bg-[#6f87a0]/5 rounded-full blur-[40px] pointer-events-none" />
         
         <h2 className="text-xs font-bold text-slate-400 tracking-wider uppercase mb-4 flex items-center gap-1.5">
           <PieChart className="w-3.5 h-3.5 text-[#6f87a0]" />
-          {language === 'fa' ? 'خلاصه عملکرد معاملاتی' : 'PnL Metrics Analytics'}
+          {language === 'ku' ? 'پوختەی ئەنجامەکانی مامەڵە' : (language === 'fa' ? 'خلاصه عملکرد معاملاتی' : 'PnL Metrics Analytics')}
         </h2>
 
         <div className="grid grid-cols-2 gap-4">
           <div className="p-4 rounded-2xl bg-white/3 border border-white/5">
             <span className="text-[10px] text-slate-400 block font-semibold uppercase tracking-wider">
-              {language === 'fa' ? 'بازده خالص (PnL)' : 'Total Net Profit'}
+              {language === 'ku' ? 'قازانجی پوخت (PnL)' : (language === 'fa' ? 'بازده خالص (PnL)' : 'Total Net Profit')}
             </span>
             <span className={`text-xl font-black font-mono tracking-tight block mt-1 ${stats.totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
               ${stats.totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
@@ -622,7 +628,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
 
           <div className="p-4 rounded-2xl bg-white/3 border border-white/5">
             <span className="text-[10px] text-slate-400 block font-semibold uppercase tracking-wider">
-              {language === 'fa' ? 'نسبت پیروزی' : 'Win Rate Ratio'}
+              {language === 'ku' ? 'ڕێژەی سەرکەوتن' : (language === 'fa' ? 'نسبت پیروزی' : 'Win Rate Ratio')}
             </span>
             <span className="text-xl font-black font-mono text-emerald-400 block mt-1">
               {stats.winRate}%
@@ -632,13 +638,13 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
 
         <div className="grid grid-cols-3 gap-2 mt-3 font-mono text-center">
           <div className="py-1.5 px-3 bg-white/2 rounded-xl border border-white/5 text-[10px] text-slate-400 font-bold">
-            {language === 'fa' ? 'برد:' : 'WINS:'} <span className="text-emerald-400 font-bold">{stats.winCount}</span>
+            {language === 'ku' ? 'بردنەوە:' : (language === 'fa' ? 'برد:' : 'WINS:')} <span className="text-emerald-400 font-bold">{stats.winCount}</span>
           </div>
           <div className="py-1.5 px-3 bg-white/2 rounded-xl border border-white/5 text-[10px] text-slate-400 font-bold">
-            {language === 'fa' ? 'باخت:' : 'LOSSES:'} <span className="text-rose-400 font-bold">{stats.lossCount}</span>
+            {language === 'ku' ? 'دۆڕان:' : (language === 'fa' ? 'باخت:' : 'LOSSES:')} <span className="text-rose-400 font-bold">{stats.lossCount}</span>
           </div>
           <div className="py-1.5 px-3 bg-white/2 rounded-xl border border-white/5 text-[10px] text-slate-400 font-bold">
-            {language === 'fa' ? 'مجموع:' : 'TOTAL:'} <span className="text-white font-black">{stats.tradesCount}</span>
+            {language === 'ku' ? 'کۆی گشتی:' : (language === 'fa' ? 'مجموع:' : 'TOTAL:')} <span className="text-white font-black">{stats.tradesCount}</span>
           </div>
         </div>
       </div>
@@ -648,7 +654,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
         !isVip ? (
           <div 
             className="p-5 rounded-3xl glass-card border border-amber-500/15 space-y-4 shadow-xl text-center flex flex-col items-center justify-center py-8 relative overflow-hidden"
-            dir={language === 'fa' ? 'rtl' : 'ltr'}
+            dir={isRtl ? 'rtl' : 'ltr'}
           >
             <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/5 rounded-full blur-2xl pointer-events-none" />
             
@@ -659,17 +665,21 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
             <div className="space-y-2 max-w-[280px]">
               <h3 className="text-xs font-black text-amber-400 flex items-center gap-1.5 justify-center uppercase tracking-wider">
                 <Sparkles className="w-3.5 h-3.5 text-amber-450 animate-pulse" />
-                <span>{language === 'fa' ? 'ثبت معامله ویژه (VIP)' : 'Onigama VIP Trading Ledger'}</span>
+                <span>{language === 'ku' ? 'تۆماری مامەڵەی تایبەت (VIP)' : (language === 'fa' ? 'ثبت معامله ویژه (VIP)' : 'Onigama VIP Trading Ledger')}</span>
               </h3>
               <p className="text-[11px] text-slate-300 leading-relaxed font-sans font-medium">
-                {language === 'fa' 
-                  ? 'ثبت و ارزیابی پیشرفته معامله در ژورنال کلاینت مخصوص دارندگان لایسنس فعال طلایی است. به راحتی با کدهای رایگان موجود در تنظیمات لایسنس خود را فعال کنید!'
-                  : 'Logging interactive trades to run official audited spreadsheets is exclusive to Premium VIP members.'}
+                {language === 'ku'
+                  ? 'تۆمارکردن و هەڵسەنگاندنی پێشکەوتووی مامەڵە لە ژوورناڵدا تایبەتە بە خاوەنانی مۆڵەتی زێڕین. بە کلیلە بێبەرامبەرەکانی ناو ڕێکخستنەکان ئەپەکەت چالاک بکە!'
+                  : (language === 'fa' 
+                    ? 'ثبت و ارزیابی پیشرفته معامله در ژورنال کلاینت مخصوص دارندگان لایسنس فعال طلایی است. به راحتی با کدهای رایگان موجود در تنظیمات لایسنس خود را فعال کنید!'
+                    : 'Logging interactive trades to run official audited spreadsheets is exclusive to Premium VIP members.')}
               </p>
               <p className="text-[9px] text-slate-500 font-sans font-semibold">
-                {language === 'fa'
-                  ? '💡 لایسنس‌های موقت رایگان در بخش تنظیمات تعبیه شده است.'
-                  : '💡 Temporary free credentials are provided in the settings tab.'}
+                {language === 'ku'
+                  ? '💡 مۆڵەتی تاقیکاریی بێبەرامبەر لە بەشی «ڕێکخستنەکان» هەیە.'
+                  : (language === 'fa'
+                    ? '💡 لایسنس‌های موقت رایگان در بخش تنظیمات تعبیه شده است.'
+                    : '💡 Temporary free credentials are provided in the settings tab.')}
               </p>
             </div>
 
@@ -679,7 +689,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
                 onClick={() => onNavigate('settings')}
                 className="w-full mt-2 py-2.5 px-4 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-black rounded-xl text-xs transition-all cursor-pointer flex items-center justify-center gap-1.5 shadow-md active:scale-95"
               >
-                <span>{language === 'fa' ? '🔑 بازکردن با لایسنس طلایی' : '🔑 Activate VIP license'}</span>
+                <span>{language === 'ku' ? '🔑 چالاککردن بە مۆڵەتی زێڕین' : (language === 'fa' ? '🔑 بازکردن با لایسنس طلایی' : '🔑 Activate VIP license')}</span>
               </button>
             )}
             
@@ -688,31 +698,31 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
               onClick={() => setIsLoggingTrade(false)}
               className="text-[10px] text-slate-500 hover:text-slate-400 underline cursor-pointer"
             >
-              {language === 'fa' ? 'بستن پیام' : 'Dismiss'}
+              {language === 'ku' ? 'داخستن' : (language === 'fa' ? 'بستن پیام' : 'Dismiss')}
             </button>
           </div>
         ) : (
           <form 
             onSubmit={handleLogTradeSubmit}
             className="p-5 rounded-3xl glass-card border border-white/10 space-y-4 shadow-xl"
-            dir={language === 'fa' ? 'rtl' : 'ltr'}
+            dir={isRtl ? 'rtl' : 'ltr'}
           >
             <div className="flex justify-between items-center mb-1">
               <h3 className="text-xs font-bold text-white uppercase tracking-wider">
-                {language === 'fa' ? 'ثبت معامله جدید در ژورنال' : 'Add Manual Trade Journal Entry'}
+                {language === 'ku' ? 'تۆمارکردنی مامەڵەی نوێ لە ژوورناڵدا' : (language === 'fa' ? 'ثبت معامله جدید در ژورنال' : 'Add Manual Trade Journal Entry')}
               </h3>
               <button 
                 type="button" 
                 onClick={() => setIsLoggingTrade(false)}
                 className="text-xs text-rose-400 underline font-mono"
               >
-                {language === 'fa' ? 'لغو' : 'Cancel'}
+                {language === 'ku' ? 'پەشیمانبوونەوە' : (language === 'fa' ? 'لغو' : 'Cancel')}
               </button>
             </div>
 
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="text-[10px] text-slate-400 font-semibold block mb-1.5 uppercase tracking-wide">{language === 'fa' ? 'نماد' : 'Symbol'}</label>
+                <label className="text-[10px] text-slate-400 font-semibold block mb-1.5 uppercase tracking-wide">{language === 'ku' ? 'هێما (Symbol)' : (language === 'fa' ? 'نماد' : 'Symbol')}</label>
                 <input
                   type="text"
                   required
@@ -722,7 +732,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
                 />
               </div>
               <div>
-                <label className="text-[10px] text-slate-400 font-semibold block mb-1.5 uppercase tracking-wide">{language === 'fa' ? 'نوع معامله' : 'Type'}</label>
+                <label className="text-[10px] text-slate-400 font-semibold block mb-1.5 uppercase tracking-wide">{language === 'ku' ? 'جۆری مامەڵە' : (language === 'fa' ? 'نوع معامله' : 'Type')}</label>
                 <select
                   value={type}
                   onChange={e => setType(e.target.value as any)}
@@ -733,7 +743,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
                 </select>
               </div>
               <div>
-                <label className="text-[10px] text-slate-400 font-semibold block mb-1.5 uppercase tracking-wide">{language === 'fa' ? 'حجم (لات)' : 'Lot Size'}</label>
+                <label className="text-[10px] text-slate-400 font-semibold block mb-1.5 uppercase tracking-wide">{language === 'ku' ? 'قەبارە (Lot)' : (language === 'fa' ? 'حجم (لات)' : 'Lot Size')}</label>
                 <input
                   type="number"
                   step="0.01"
@@ -747,7 +757,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
 
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="text-[10px] text-slate-400 font-semibold block mb-1.5 uppercase tracking-wide">{language === 'fa' ? 'قیمت ورود' : 'Entry Price'}</label>
+                <label className="text-[10px] text-slate-400 font-semibold block mb-1.5 uppercase tracking-wide">{language === 'ku' ? 'نرخی چوونەژوور' : (language === 'fa' ? 'قیمت ورود' : 'Entry Price')}</label>
                 <input
                   type="number"
                   step="0.01"
@@ -759,7 +769,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
                 />
               </div>
               <div>
-                <label className="text-[10px] text-slate-400 font-semibold block mb-1.5 uppercase tracking-wide">{language === 'fa' ? 'قیمت خروج' : 'Exit Price'}</label>
+                <label className="text-[10px] text-slate-400 font-semibold block mb-1.5 uppercase tracking-wide">{language === 'ku' ? 'نرخی دەرچوون' : (language === 'fa' ? 'قیمت خروج' : 'Exit Price')}</label>
                 <input
                   type="number"
                   step="0.01"
@@ -771,7 +781,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
                 />
               </div>
               <div>
-                <label className="text-[10px] text-slate-400 font-semibold block mb-1.5 uppercase tracking-wide">{language === 'fa' ? 'سود/ضرر (محاسبه خودکار)' : 'Profit USD (Auto)'}</label>
+                <label className="text-[10px] text-slate-400 font-semibold block mb-1.5 uppercase tracking-wide">{language === 'ku' ? 'قازانج/زیان (خۆکار)' : (language === 'fa' ? 'سود/ضرر (محاسبه خودکار)' : 'Profit USD (Auto)')}</label>
                 <input
                   type="number"
                   step="0.01"
@@ -785,10 +795,10 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
             </div>
 
             <div>
-              <label className="text-[10px] text-slate-400 font-semibold block mb-1.5 uppercase tracking-wide">{language === 'fa' ? 'توضیحات معامله' : 'Trade Journal Notes'}</label>
+              <label className="text-[10px] text-slate-400 font-semibold block mb-1.5 uppercase tracking-wide">{language === 'ku' ? 'تێبینییەکانی مامەڵە' : (language === 'fa' ? 'توضیحات معامله' : 'Trade Journal Notes')}</label>
               <input
                 type="text"
-                placeholder={language === 'fa' ? 'مثال: بریک اوت لندن، تاچ اوردربلاک' : 'e.g. London BOS, mitigated OB'}
+                placeholder={language === 'ku' ? 'نموونە: شکان لە لەندەن، گەیشتن بە ئۆردەربلۆک' : (language === 'fa' ? 'مثال: بریک اوت لندن، تاچ اوردربلاک' : 'e.g. London BOS, mitigated OB')}
                 value={notes}
                 onChange={e => setNotes(e.target.value)}
                 className="w-full bg-white/5 border border-white/10 focus:border-[#6f87a0] text-xs rounded-xl p-2.5 text-white outline-none"
@@ -799,7 +809,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
               type="submit"
               className="w-full py-3 bg-[#6f87a0] hover:bg-[#5e748d] text-white text-xs font-black rounded-xl transition-all uppercase tracking-wider"
             >
-              {language === 'fa' ? 'ثبت در دفترچه ژورنال کلاینت' : 'Record in Local Journal'}
+              {language === 'ku' ? 'تۆمارکردن لە ژوورناڵی مامەڵەکاندا' : (language === 'fa' ? 'ثبت در دفترچه ژورنال کلاینت' : 'Record in Local Journal')}
             </button>
           </form>
         )
@@ -811,12 +821,12 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
         <div className="lg:col-span-7 space-y-6">
           
           {/* FILTERS & SEARCH ROW */}
-          <div className="space-y-3" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+          <div className="space-y-3" dir={isRtl ? 'rtl' : 'ltr'}>
         <div className="flex justify-between items-center">
           <div className="flex items-center gap-1.5">
             <ListFilter className="w-4 h-4 text-[#6f87a0]" />
             <span className="text-xs font-semibold text-slate-300">
-              {language === 'fa' ? 'فیلتر کردن معاملات' : 'Filter Trade Log'}
+              {language === 'ku' ? 'فلتەرکردنی مامەڵەکان' : (language === 'fa' ? 'فیلتر کردن معاملات' : 'Filter Trade Log')}
             </span>
           </div>
           {trades.length > 0 && (
@@ -824,7 +834,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
               onClick={handleClearAllTrades} 
               className="text-[10px] text-rose-400 underline cursor-pointer"
             >
-              {language === 'fa' ? 'پاک کردن تاریخچه' : 'Clear Journal'}
+              {language === 'ku' ? 'سڕینەوەی مێژوو' : (language === 'fa' ? 'پاک کردن تاریخچه' : 'Clear Journal')}
             </button>
           )}
         </div>
@@ -835,9 +845,9 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
             onChange={(e) => setFilterOutcome(e.target.value as any)}
             className="flex-1 bg-[#070f17]/95 text-slate-300 p-2.5 rounded-xl border border-white/5 hover:border-white/10 transition-colors cursor-pointer outline-none text-[11px] font-sans"
           >
-            <option value="ALL">{language === 'fa' ? 'همه (برد/باخت)' : 'All Outcomes'}</option>
-            <option value="WIN">{language === 'fa' ? 'فقط بردها' : 'Wins Only'}</option>
-            <option value="LOSS">{language === 'fa' ? 'فقط باختها' : 'Losses Only'}</option>
+            <option value="ALL">{language === 'ku' ? 'هەموو ئەنجامەکان' : (language === 'fa' ? 'همه (برد/باخت)' : 'All Outcomes')}</option>
+            <option value="WIN">{language === 'ku' ? 'تەنها بردنەوەکان' : (language === 'fa' ? 'فقط بردها' : 'Wins Only')}</option>
+            <option value="LOSS">{language === 'ku' ? 'تەنها دۆڕانەکان' : (language === 'fa' ? 'فقط باختها' : 'Losses Only')}</option>
           </select>
 
           <select
@@ -845,35 +855,35 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
             onChange={(e) => setFilterType(e.target.value as any)}
             className="flex-1 bg-[#070f17]/95 text-slate-300 p-2.5 rounded-xl border border-white/5 hover:border-white/10 transition-colors cursor-pointer outline-none text-[11px] font-sans"
           >
-            <option value="ALL">{language === 'fa' ? 'همه (خرید/فروش)' : 'All Types'}</option>
+            <option value="ALL">{language === 'ku' ? 'هەموو جۆرەکان (BUY/SELL)' : (language === 'fa' ? 'همه (خرید/فروش)' : 'All Types')}</option>
             <option value="BUY">BUY Only</option>
             <option value="SELL">SELL Only</option>
           </select>
         </div>
 
         {trades.length > 0 && (
-          <div className="flex flex-col sm:flex-row gap-2.5 sm:items-center text-xs mt-2" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+          <div className="flex flex-col sm:flex-row gap-2.5 sm:items-center text-xs mt-2" dir={isRtl ? 'rtl' : 'ltr'}>
             <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider mr-1 ml-1 hidden sm:inline-block">
-              {language === 'fa' ? 'عملیات کارنامه و استخراج داده‌ها:' : 'Extract trading ledger data:'}
+              {language === 'ku' ? 'دەرهێنان و پاشەکەوتکردنی داتاکان:' : (language === 'fa' ? 'عملیات کارنامه و استخراج داده‌ها:' : 'Extract trading ledger data:')}
             </span>
             <div className="flex flex-row gap-2 items-center justify-end w-full sm:w-auto">
               <button
                 onClick={exportToCSV}
                 type="button"
                 className="flex-1 sm:flex-auto px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-slate-300 hover:text-white transition-all text-[10px] font-bold flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 animate-fade-in"
-                title={language === 'fa' ? 'دانلود به صورت فایل اکسل / CSV' : 'Download spreadsheet CSV format'}
+                title={language === 'ku' ? 'دابەزاندن وەک فایلی ئێکسڵ / CSV' : (language === 'fa' ? 'دانلود به صورت فایل اکسل / CSV' : 'Download spreadsheet CSV format')}
               >
                 <Download className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
-                <span>{language === 'fa' ? 'دانلود فایل اکسل (CSV)' : 'Export CSV (Excel)'}</span>
+                <span>{language === 'ku' ? 'دابەزاندنی CSV (ئێکسڵ)' : (language === 'fa' ? 'دانلود فایل اکسل (CSV)' : 'Export CSV (Excel)')}</span>
               </button>
               <button
                 onClick={copyAsTableText}
                 type="button"
                 className="flex-1 sm:flex-auto px-3 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 text-slate-300 hover:text-white transition-all text-[10px] font-bold flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-                title={language === 'fa' ? 'کپی کل جدول معاملات' : 'Copy markdown formatted ledger'}
+                title={language === 'ku' ? 'کۆپیکردنی دەقی تەواوی خشتەی مامەڵەکان' : (language === 'fa' ? 'کپی کل جدول معاملات' : 'Copy markdown formatted ledger')}
               >
                 <Share2 className="w-3.5 h-3.5 text-sky-400 shrink-0" />
-                <span>{isCopying ? (language === 'fa' ? 'کپی شد!' : 'Copied!') : (language === 'fa' ? 'کپی متنی' : 'Copy Text')}</span>
+                <span>{isCopying ? (language === 'ku' ? 'کۆپیکرا!' : (language === 'fa' ? 'کپی شد!' : 'Copied!')) : (language === 'ku' ? 'کۆپیکردنی دەق' : (language === 'fa' ? 'کپی متنی' : 'Copy Text'))}</span>
               </button>
             </div>
           </div>
@@ -883,7 +893,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
         {filteredTrades.length === 0 ? (
           <div className="p-10 text-center glass-card rounded-2xl">
             <p className="text-xs text-slate-400 font-sans">
-              {language === 'fa' ? 'هیچ معاملهای با فیلتر کنونی پیدا نشد.' : 'No trades matching current filters found.'}
+              {language === 'ku' ? 'هیچ مامەڵەیەک بەم فلتەرە نەدۆزرایەوە.' : (language === 'fa' ? 'هیچ معاملهای با فیلتر کنونی پیدا نشد.' : 'No trades matching current filters found.')}
             </p>
           </div>
         ) : (
@@ -894,6 +904,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
                 <div
                   key={trade.id}
                   className="p-4 sm:p-5 rounded-3xl glass-card hover:border-white/12 transition-all text-right relative overflow-hidden flex flex-col justify-between"
+                  dir={isRtl ? 'rtl' : 'ltr'}
                 >
                   <div className="flex justify-between items-start mb-2">
                     <button
@@ -927,15 +938,15 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
                   {/* PRICE POINTS */}
                   <div className="grid grid-cols-3 gap-1.5 sm:gap-2 bg-white/2 p-2.5 sm:p-3 rounded-2xl border border-white/5 font-mono text-center mb-2.5">
                     <div>
-                      <span className="text-[8.5px] sm:text-[9.5px] text-slate-500 block">{language === 'fa' ? 'قیمت ورود' : 'ENTRY'}</span>
+                      <span className="text-[8.5px] sm:text-[9.5px] text-slate-500 block">{language === 'ku' ? 'نرخی چوونەژوور' : (language === 'fa' ? 'قیمت ورود' : 'ENTRY')}</span>
                       <span className="text-[10.5px] sm:text-xs font-bold text-slate-200">${trade.entryPrice.toFixed(2)}</span>
                     </div>
                     <div>
-                      <span className="text-[8.5px] sm:text-[9.5px] text-slate-500 block">{language === 'fa' ? 'قیمت خروج' : 'EXIT'}</span>
+                      <span className="text-[8.5px] sm:text-[9.5px] text-slate-500 block">{language === 'ku' ? 'نرخی دەرچوون' : (language === 'fa' ? 'قیمت خروج' : 'EXIT')}</span>
                       <span className="text-[10.5px] sm:text-xs font-bold text-slate-200">${trade.exitPrice.toFixed(2)}</span>
                     </div>
                     <div>
-                      <span className="text-[8.5px] sm:text-[9.5px] text-slate-500 block">{language === 'fa' ? 'سود ناخالص' : 'RETURN'}</span>
+                      <span className="text-[8.5px] sm:text-[9.5px] text-slate-500 block">{language === 'ku' ? 'قازانجی پوخت' : (language === 'fa' ? 'سود ناخالص' : 'RETURN')}</span>
                       <span className={`text-[10.5px] sm:text-xs font-black ${isWin ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {isWin ? '+' : ''}${trade.profit.toFixed(2)}
                       </span>
@@ -1006,12 +1017,12 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
 
           <div 
             className="bg-slate-950 border border-white/10 rounded-3xl max-w-4xl w-full max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col relative"
-            dir={language === 'fa' ? 'rtl' : 'ltr'}
+            dir={isRtl ? 'rtl' : 'ltr'}
           >
             {/* Top Toolbar (Hidden during print) */}
             <div className="p-3 sm:p-4 bg-slate-900 border-b border-white/5 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center justify-between sticky top-0 z-20 no-print">
               <div className="flex items-center gap-2 justify-between">
-                <span className="text-xs text-slate-400 font-bold">{language === 'fa' ? 'سرمایه اولیه برای کارنامه ($):' : 'Starting Capital ($):'}</span>
+                <span className="text-xs text-slate-400 font-bold">{language === 'ku' ? 'سەرمایەی سەرەتایی بۆ ڕاپۆرت ($):' : (language === 'fa' ? 'سرمایه اولیه برای کارنامه ($):' : 'Starting Capital ($):')}</span>
                 <input
                   type="number"
                   value={initialBalance}
@@ -1026,10 +1037,10 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
                   onClick={exportToHTML}
                   type="button"
                   className="flex-1 sm:flex-initial py-1.5 px-3 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-[10.5px] sm:text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all"
-                  title={language === 'fa' ? 'دانلود کارنامه به عنوان سند دیجیتال آفلاین چاپی' : 'Download statement as printable offline document'}
+                  title={language === 'ku' ? 'دابەزاندنی ڕاپۆرت وەک فایلی ئۆفلاین' : (language === 'fa' ? 'دانلود کارنامه به عنوان سند دیجیتال آفلاین چاپی' : 'Download statement as printable offline document')}
                 >
                   <Download className="w-3.5 h-3.5" />
-                  <span>{language === 'fa' ? 'دریافت سند آفلاین (HTML/PDF)' : 'Download Offline Document'}</span>
+                  <span>{language === 'ku' ? 'دابەزاندنی بەڵگەنامە (HTML/PDF)' : (language === 'fa' ? 'دریافت سند آفلاین (HTML/PDF)' : 'Download Offline Document')}</span>
                 </button>
 
                 <button
@@ -1037,16 +1048,18 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
                     try {
                       window.print();
                     } catch (e) {
-                      alert(language === 'fa' 
-                        ? '⚠️ پرینت مستقیم در این محیط پشتیبانی نمیشود. لطفا از دکمه دریافت سند آفلاین استفاده کنید.' 
-                        : '⚠️ Direct print is not supported in this environment. Please use Download Offline Document.');
+                      alert(language === 'ku'
+                        ? '⚠️ چاپی ڕاستەوخۆ لەم ژینگەیەدا بەردەست نییە. تکایە دوگمەی دابەزاندنی بەڵگەنامەی ئۆفلاین بەکاربهێنە.'
+                        : (language === 'fa' 
+                          ? '⚠️ پرینت مستقیم در این محیط پشتیبانی نمیشود. لطفا از دکمه دریافت سند آفلاین استفاده کنید.' 
+                          : '⚠️ Direct print is not supported in this environment. Please use Download Offline Document.'));
                     }
                   }}
                   type="button"
                   className="flex-1 sm:flex-initial py-1.5 px-3 rounded-xl bg-gradient-to-tr from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-white font-bold text-[10.5px] sm:text-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 transition-all"
                 >
                   <Printer className="w-3.5 h-3.5" />
-                  <span>{language === 'fa' ? 'پرینت مستقیم' : 'Direct Print'}</span>
+                  <span>{language === 'ku' ? 'چاپکردنی ڕاستەوخۆ' : (language === 'fa' ? 'پرینت مستقیم' : 'Direct Print')}</span>
                 </button>
 
                 <button
@@ -1055,7 +1068,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
                   className="p-1 px-2.5 text-slate-400 hover:text-white rounded-lg bg-white/5 hover:bg-white/10 text-[10.5px] sm:text-xs transition-colors flex items-center justify-center gap-1 cursor-pointer"
                 >
                   <X className="w-3.5 h-3.5" />
-                  <span>{language === 'fa' ? 'بستن' : 'Close'}</span>
+                  <span>{language === 'ku' ? 'داخستن' : (language === 'fa' ? 'بستن' : 'Close')}</span>
                 </button>
               </div>
             </div>
@@ -1076,7 +1089,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
                     <span className="text-lg font-black tracking-wider text-white">ONIGAMA TRADERS SYSTEM</span>
                   </div>
                   <p className="text-[10px] text-slate-500 tracking-widest uppercase font-mono">
-                    {language === 'fa' ? 'بخش حسابرسی و ارزیابی عملکرد استراتژی معاملاتی' : 'Audited Institutional Performance & Strategy Ledger'}
+                    {language === 'ku' ? 'بەشی وردبینی و هەڵسەنگاندنی ئەنجامەکانی بازرگانی' : (language === 'fa' ? 'بخش حسابرسی و ارزیابی عملکرد استراتژی معاملاتی' : 'Audited Institutional Performance & Strategy Ledger')}
                   </p>
                 </div>
 
@@ -1089,11 +1102,11 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
               </div>
 
               {/* OVERVIEW KEY PERFORMANCE CARDS */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4" dir={isRtl ? 'rtl' : 'ltr'}>
                 
                 <div className="p-4 rounded-2xl bg-white/3 border border-white/5">
                   <span className="text-[9.5px] uppercase tracking-wider text-slate-500 block font-bold">
-                    {language === 'fa' ? 'سرمایه اولیه ترازنامه' : 'Starting Capital'}
+                    {language === 'ku' ? 'سەرمایەی سەرەتایی' : (language === 'fa' ? 'سرمایه اولیه ترازنامه' : 'Starting Capital')}
                   </span>
                   <span className="text-base font-bold font-mono text-slate-300 mt-1 block">
                     ${parseFloat(initialBalance || '10000').toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -1102,7 +1115,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
 
                 <div className="p-4 rounded-2xl bg-white/3 border border-white/5">
                   <span className="text-[9.5px] uppercase tracking-wider text-slate-500 block font-bold">
-                    {language === 'fa' ? 'سود/ضرر بازده خالص' : 'Total Net Profit/Loss'}
+                    {language === 'ku' ? 'کۆی قازانج/زیانی پوخت' : (language === 'fa' ? 'سود/ضرر بازده خالص' : 'Total Net Profit/Loss')}
                   </span>
                   <span className={`text-base font-black font-mono mt-1 block ${stats.totalProfit >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                     {stats.totalProfit >= 0 ? '+' : ''}${stats.totalProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
@@ -1111,16 +1124,16 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
 
                 <div className="p-4 rounded-2xl bg-[#6f87a0]/10 border border-[#6f87a0]/20">
                   <span className="text-[9.5px] uppercase tracking-wider text-slate-400 block font-bold">
-                    {language === 'fa' ? 'ارزش نهایی پورتفو' : 'Final Balance Value'}
+                    {language === 'ku' ? 'سەرمایەی کۆتایی' : (language === 'fa' ? 'ارزش نهایی پورتفو' : 'Final Balance Value')}
                   </span>
-                  <span className="text-base font-black font-mono text-white mt- block">
+                  <span className="text-base font-black font-mono text-white mt-1 block">
                     ${(parseFloat(initialBalance || '10000') + stats.totalProfit).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                   </span>
                 </div>
 
                 <div className="p-4 rounded-2xl bg-white/3 border border-white/5">
                   <span className="text-[9.5px] uppercase tracking-wider text-slate-500 block font-bold">
-                    {language === 'fa' ? 'نسبت معاملات موفق' : 'Success Win Rate'}
+                    {language === 'ku' ? 'ڕێژەی سەرکەوتن' : (language === 'fa' ? 'نسبت معاملات موفق' : 'Success Win Rate')}
                   </span>
                   <span className="text-base font-bold font-mono text-emerald-400 mt-1 block">
                     {stats.winRate}% (Wins {stats.winCount}/{stats.tradesCount})
@@ -1130,23 +1143,23 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
               </div>
 
               {/* DETAILED STATISTICAL SUB-METRICS LIST */}
-              <div className="p-4 bg-white/2 rounded-2xl border border-white/5" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+              <div className="p-4 bg-white/2 rounded-2xl border border-white/5" dir={isRtl ? 'rtl' : 'ltr'}>
                 <h4 className="text-[10px] font-black tracking-wider text-slate-400 uppercase mb-3 font-mono">
-                  {language === 'fa' ? '📌 شاخص‌های پیشرفته سودآوری سیستم' : '📌 PERFORMANCE MULTIPLIER INDICES'}
+                  {language === 'ku' ? '📌 پێوەرە پێشکەوتووەکانی قازانج' : (language === 'fa' ? '📌 شاخص‌های پیشرفته سودآوری سیستم' : '📌 PERFORMANCE MULTIPLIER INDICES')}
                 </h4>
                 <div className="grid grid-cols-3 gap-4 text-center">
                   <div className="space-y-0.5">
-                    <span className="text-[9px] text-slate-500 block">{language === 'fa' ? 'ضریب سودآوری (Profit Factor)' : 'Profit Factor'}</span>
+                    <span className="text-[9px] text-slate-500 block">{language === 'ku' ? 'فاکتەری قازانج (Profit Factor)' : (language === 'fa' ? 'ضریب سودآوری (Profit Factor)' : 'Profit Factor')}</span>
                     <span className="text-xs font-bold text-slate-200 font-mono">{profitFactor}</span>
                   </div>
                   <div className="space-y-0.5 border-x border-white/5">
-                    <span className="text-[9px] text-slate-500 block">{language === 'fa' ? 'میانگین سود در هر معامله' : 'Avg Profit Per Trade'}</span>
+                    <span className="text-[9px] text-slate-500 block">{language === 'ku' ? 'تێکڕای قازانج لە هەر مامەڵەیەکدا' : (language === 'fa' ? 'میانگین سود در هر معامله' : 'Avg Profit Per Trade')}</span>
                     <span className={`text-xs font-bold font-mono ${parseFloat(avgProfitPerTrade) >= 0 ? 'text-emerald-400' : 'text-rose-400'}`}>
                       ${parseFloat(avgProfitPerTrade).toLocaleString(undefined, { minimumFractionDigits: 2 })}
                     </span>
                   </div>
                   <div className="space-y-0.5">
-                    <span className="text-[9px] text-slate-500 block">{language === 'fa' ? 'حجم کل قراردادهای اسمی' : 'Total Traded Volumes'}</span>
+                    <span className="text-[9px] text-slate-500 block">{language === 'ku' ? 'کۆی قەبارەی مامەڵەکان' : (language === 'fa' ? 'حجم کل قراردادهای اسمی' : 'Total Traded Volumes')}</span>
                     <span className="text-xs font-bold text-slate-200 font-mono">{totalVolumeTraded} Lots</span>
                   </div>
                 </div>
@@ -1155,7 +1168,7 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
               {/* TRADING RECORDS LEDGER REPORT */}
               <div className="space-y-2">
                 <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest font-mono block">
-                  {language === 'fa' ? 'لیست تراکنش‌های ثبت‌شده (دفتر کل):' : 'AUDITED HISTORICAL JOURNAL LEDGER:'}
+                  {language === 'ku' ? 'لیستی مامەڵە تۆمارکراوەکان (دەفتەری گشتی):' : (language === 'fa' ? 'لیست تراکنش‌های ثبت‌شده (دفتر کل):' : 'AUDITED HISTORICAL JOURNAL LEDGER:')}
                 </span>
 
                 <div className="w-full overflow-x-auto rounded-xl border border-white/5">
@@ -1202,24 +1215,26 @@ export function JournalPage({ language, onNavigate }: JournalPageProps) {
               </div>
 
               {/* AUDIT SEAL STAMP & LEGAL SIGNATURE FOOTER */}
-              <div className="pt-10 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-6" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+              <div className="pt-10 border-t border-white/10 flex flex-col sm:flex-row justify-between items-center gap-6" dir={isRtl ? 'rtl' : 'ltr'}>
                 <div className="space-y-1 text-center sm:text-right">
                   <div className="flex items-center gap-1.5 justify-center sm:justify-start">
                     <Award className="w-4 h-4 text-amber-500" />
                     <span className="text-[11px] font-black text-slate-200 uppercase tracking-wider">
-                      {language === 'fa' ? 'مورد ممیزی و تایید رسمی سیستم فام Onigama' : 'Onigama Audited Strategy Certification'}
+                      {language === 'ku' ? 'پشتڕاستکراوە لەلایەن سیستەمی فەرمیی Onigama' : (language === 'fa' ? 'مورد ممیزی و تایید رسمی سیستم فام Onigama' : 'Onigama Audited Strategy Certification')}
                     </span>
                   </div>
                   <p className="text-[9.5px] text-slate-500 font-sans leading-relaxed max-w-lg">
-                    {language === 'fa'
-                      ? 'این گزارش تراز معتبر بر اساس معاملات آزمایشی و شبیه‌سازی کلاینت بصورت محلی محاسبه و تایید شده است. به عنوان تاییدیه معتبر معاملاتی Onigama صادر می‌گردد.'
-                      : 'This certified performance ledger represents offline local sandbox testing logged actions. Issued by Onigama Core Engine Security, conforming completely with platform trading rules.'}
+                    {language === 'ku'
+                      ? 'ئەم ڕاپۆرتە بەپێی مامەڵە تۆمارکراوەکانی بەکارهێنەر لەسەر ئامێرەکە هەژمارکراوە و وەک بەڵگەنامەی باوەڕپێکراوی Onigama دەردەچێت.'
+                      : (language === 'fa'
+                        ? 'این گزارش تراز معتبر بر اساس معاملات آزمایشی و شبیه‌سازی کلاینت بصورت محلی محاسبه و تایید شده است. به عنوان تاییدیه معتبر معاملاتی Onigama صادر می‌گردد.'
+                        : 'This certified performance ledger represents offline local sandbox testing logged actions. Issued by Onigama Core Engine Security, conforming completely with platform trading rules.')}
                   </p>
                 </div>
 
                 {/* Simulated Stamp Badge */}
                 <div className="border-2 border-dashed border-emerald-500/40 p-3.5 rounded-2xl text-center rotate-3 scale-95 select-none shrink-0 font-mono no-print">
-                  <div className="text-[8px] font-black text-emerald-500/60 uppercase tracking-widest">{language === 'fa' ? 'کنترل سیستم‌های مالی' : 'FINANCIAL SYSTEMS CHECK'}</div>
+                  <div className="text-[8px] font-black text-emerald-500/60 uppercase tracking-widest">{language === 'ku' ? 'پشکنینی سیستەمی دارایی' : (language === 'fa' ? 'کنترل سیستم‌های مالی' : 'FINANCIAL SYSTEMS CHECK')}</div>
                   <div className="text-sm font-black text-emerald-400 my-0.5 tracking-tight">★ VERIFIED PASSED ★</div>
                   <div className="text-[8px] font-semibold text-slate-400">{new Date().toISOString().split('T')[0]} ONIGAMA-Q</div>
                 </div>

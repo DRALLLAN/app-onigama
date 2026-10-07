@@ -11,10 +11,11 @@ import { SettingsPage } from './pages/SettingsPage';
 import { CatalogPage } from './pages/CatalogPage';
 import { StorageManager } from './services/api';
 import { SignalCornerToast } from './components/SignalCornerToast';
+import { Language } from './types';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('home');
-  const [language, setLanguage] = useState<'fa' | 'en'>('fa');
+  const [language, setLanguage] = useState<Language>('fa');
   const [showSplash, setShowSplash] = useState<boolean>(true);
   const [theme, setTheme] = useState<'dark' | 'glass'>('dark');
 
@@ -28,6 +29,13 @@ export default function App() {
     setTheme(currentTheme);
     document.documentElement.className = `theme-${currentTheme}`;
   }, []);
+
+  useEffect(() => {
+    // Synchronize HTML document dir and lang for Kurdish Sorani, Persian, and English
+    const isRtl = language === 'fa' || language === 'ku';
+    document.documentElement.dir = isRtl ? 'rtl' : 'ltr';
+    document.documentElement.lang = language === 'ku' ? 'ckb' : language;
+  }, [language]);
 
   const handleThemeChange = (newTheme: 'dark' | 'glass') => {
     setTheme(newTheme);
@@ -75,7 +83,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      <div className="min-h-screen bg-gradient-radial text-slate-100 flex flex-col font-sans selection:bg-yellow-400 selection:text-black antialiased relative overflow-x-hidden">
+      <div className="min-h-screen min-h-[100dvh] w-full max-w-full bg-gradient-radial text-slate-100 flex flex-col font-sans selection:bg-yellow-400 selection:text-black antialiased relative px-safe">
         
         {/* BRAND GLOW GRAPHICS */}
         <div className="absolute top-[-100px] left-1/2 -translate-x-1/2 w-[380px] h-[380px] bg-[#6f87a0]/15 rounded-full blur-[85px] pointer-events-none z-0" />
@@ -83,7 +91,7 @@ export default function App() {
         <div className="absolute top-[40%] left-[-80px] w-[240px] h-[240px] bg-sky-500/5 rounded-full blur-[80px] pointer-events-none z-0" />
 
         {/* RESPONSIVE APP FRAME */}
-        <div className="w-full lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto flex-1 flex flex-col px-3.5 sm:px-4 pt-4 sm:pt-5 pb-28 md:pb-32 z-10 relative">
+        <div className="w-full max-w-full lg:max-w-5xl xl:max-w-6xl 2xl:max-w-7xl mx-auto flex-1 flex flex-col px-2.5 sm:px-4 pt-2.5 sm:pt-5 pb-28 md:pb-32 z-10 relative">
           <AnimatePresence mode="wait">
             {!showSplash && (
               <motion.main

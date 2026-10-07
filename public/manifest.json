@@ -4,9 +4,9 @@
   "description": "Onigama FX - Gold signals, market analysis, and trading journal.",
   "start_url": "/",
   "display": "standalone",
+  "display_override": ["standalone", "minimal-ui", "window-controls-overlay"],
   "background_color": "#090d16",
   "theme_color": "#090d16",
-  "orientation": "portrait-primary",
   "categories": ["finance", "business"],
   "icons": [
     {

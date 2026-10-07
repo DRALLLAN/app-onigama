@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Sparkles, TrendingUp, ShieldCheck, Zap } from 'lucide-react';
+import { Language } from '../types';
 
 interface SplashScreenProps {
-  language: 'fa' | 'en';
+  language: Language;
   onFinished: () => void;
 }
 
@@ -11,8 +12,14 @@ export function SplashScreen({ language, onFinished }: SplashScreenProps) {
   const [progress, setProgress] = useState(0);
   const [loadingText, setLoadingText] = useState('');
 
-  // Dual-language status updates for high-fidelity execution aesthetic
-  const steps = language === 'fa' ? [
+  // Multi-language status updates for high-fidelity execution aesthetic
+  const steps = language === 'ku' ? [
+    { threshold: 0, text: 'پەیوەستبوون بە بازاڕی زێڕ و کاڵاکان...' },
+    { threshold: 25, text: 'شیکاریی پێکهاتەی بازاڕ (SMC) و ئۆردەربلۆکەکان...' },
+    { threshold: 55, text: 'دیاریکردنی زۆنەکانی خستنەڕوو، داواکاری و نەختینە...' },
+    { threshold: 80, text: 'ئامادەکردنی سەکۆی بازرگانیی ئۆنیگاما...' },
+    { threshold: 100, text: 'پەیوەندی بە سەرکەوتوویی جێگیر کرا!' }
+  ] : (language === 'fa' ? [
     { threshold: 0, text: 'در حال اتصال به مارکت طلا...' },
     { threshold: 25, text: 'بارگذاری الگوهای ساختار بازار (SMC)...' },
     { threshold: 55, text: 'محاسبه سطوح عرضه، تقاضا و نقدینگی...' },
@@ -24,7 +31,7 @@ export function SplashScreen({ language, onFinished }: SplashScreenProps) {
     { threshold: 55, text: 'Calculating Supply, Demand & Liquidity zones...' },
     { threshold: 80, text: 'Optimizing Onigama FX client dashboard...' },
     { threshold: 100, text: 'Gateway established successfully!' }
-  ];
+  ]);
 
   useEffect(() => {
     // Dynamic loading interval that fills in 2.2 seconds
@@ -55,7 +62,13 @@ export function SplashScreen({ language, onFinished }: SplashScreenProps) {
   }, [language]);
 
   return (
-    <div className="fixed inset-0 z-[9999] bg-[#030712] flex flex-col items-center justify-between p-8 overflow-hidden select-none">
+    <div 
+      onClick={onFinished}
+      role="button"
+      tabIndex={0}
+      title={language === 'ku' ? 'کرتە بکە بۆ چوونەژوورەوەی خێرا' : (language === 'fa' ? 'برای ورود سریع کلیک کنید' : 'Click to skip')}
+      className="fixed inset-0 z-[9999] bg-[#030712] flex flex-col items-center justify-between p-8 overflow-hidden select-none cursor-pointer"
+    >
       
       {/* GLOW DECORATIONS */}
       <div className="absolute top-1/4 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] bg-amber-500/10 rounded-full blur-[100px] pointer-events-none" />
@@ -114,9 +127,11 @@ export function SplashScreen({ language, onFinished }: SplashScreenProps) {
           </div>
           
           <p className="text-[10px] text-slate-400 uppercase tracking-[0.16em] font-bold">
-            {language === 'fa' 
-              ? 'اکوسیستم هوشمند تحلیل مارکت و بازارهای مالی' 
-              : 'Smart Financial Intelligence Engine'}
+            {language === 'ku'
+              ? 'ئیکۆسیستەمی ژیرانەی شیکاریی مارکێت و بازاڕە دارایییەکان'
+              : (language === 'fa' 
+                ? 'اکوسیستم هوشمند تحلیل مارکت و بازارهای مالی' 
+                : 'Smart Financial Intelligence Engine')}
           </p>
         </motion.div>
       </div>

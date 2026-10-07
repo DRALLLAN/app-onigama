@@ -25,9 +25,10 @@ import {
 } from 'lucide-react';
 import { TradingViewWidget } from '../components/TradingViewWidget';
 import { StorageManager } from '../services/api';
+import { Language } from '../types';
 
 interface AnalysisPageProps {
-  language: 'fa' | 'en';
+  language: Language;
   onNavigate?: (tab: string) => void;
 }
 
@@ -151,10 +152,12 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
         id: 'lit-1',
         type: 'LIT_TRAP',
         price: +(spotPrice * 1.0055).toFixed(sym === 'EURUSD' || sym === 'GBPUSD' || sym === 'AUDUSD' || sym === 'USDCAD' ? 4 : 2),
-        label: language === 'fa' ? 'تله القایی خریداران (LIT Trap)' : 'Retail Breakout Trap (LIT)',
-        description: language === 'fa'
-          ? 'محدوده نقدینگی مهندسی‌شده برای به دام انداختن خریداران عجول در سقف سشن.'
-          : 'Engineered liquidity trap built to induce breakout buyers before a sharp reversal.',
+        label: language === 'ku' ? 'تەڵەی هاندەری کڕیاران (LIT Trap)' : (language === 'fa' ? 'تله القایی خریداران (LIT Trap)' : 'Retail Breakout Trap (LIT)'),
+        description: language === 'ku'
+          ? 'ناوچەی نەختینەی ئەندازیاریکراو بۆ خستنە تەڵەی کڕیارانی پەلە لە لوتکەی دانیشتن.'
+          : (language === 'fa'
+            ? 'محدوده نقدینگی مهندسی‌شده برای به دام انداختن خریداران عجول در سقف سشن.'
+            : 'Engineered liquidity trap built to induce breakout buyers before a sharp reversal.'),
         volProfile: 'High Density (85k Lots)',
         status: 'ACTIVE TRAP'
       },
@@ -162,10 +165,12 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
         id: 'lit-2',
         type: 'IDM_HIGH',
         price: +(spotPrice * 1.0022).toFixed(sym === 'EURUSD' || sym === 'GBPUSD' || sym === 'AUDUSD' || sym === 'USDCAD' ? 4 : 2),
-        label: language === 'fa' ? 'القاء نزولی (Inducement High)' : 'Bearish Inducement (LIT IDM)',
-        description: language === 'fa'
-          ? 'نقطه القاء فروشندگان خرد برای ورود زودهنگام به پوزیشن فروش قبل از سوئیپ اصلی.'
-          : 'High inducement level attracting early retail sellers prior to the real sweep.',
+        label: language === 'ku' ? 'هاندەری دابەزین (Inducement High)' : (language === 'fa' ? 'القاء نزولی (Inducement High)' : 'Bearish Inducement (LIT IDM)'),
+        description: language === 'ku'
+          ? 'خاڵی هاندانی فرۆشیارانی ورد بۆ چوونەژوورەوەی پێشوەختە پێش سوویپی سەرەکی.'
+          : (language === 'fa'
+            ? 'نقطه القاء فروشندگان خرد برای ورود زودهنگام به پوزیشن فروش قبل از سوئیپ اصلی.'
+            : 'High inducement level attracting early retail sellers prior to the real sweep.'),
         volProfile: 'Moderate (42k Lots)',
         status: 'UNMITIGATED'
       },
@@ -173,10 +178,12 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
         id: 'lit-3',
         type: 'ENG_LIQ',
         price: +(spotPrice * 1.0005).toFixed(sym === 'EURUSD' || sym === 'GBPUSD' || sym === 'AUDUSD' || sym === 'USDCAD' ? 4 : 2),
-        label: language === 'fa' ? 'نقدینگی مهندسی شده (Engineered Liq)' : 'Engineered Liquidity (EQH)',
-        description: language === 'fa'
-          ? 'ترکیب سقف‌های برابر (Equal Highs) که بهعنوان آهنربای جذب سفارشات موسسات عمل می‌کند.'
-          : 'Double highs structures creating a massive liquidity pool for institutional sweeps.',
+        label: language === 'ku' ? 'نەختینەی ئەندازیاریکراو (Engineered Liq)' : (language === 'fa' ? 'نقدینگی مهندسی شده (Engineered Liq)' : 'Engineered Liquidity (EQH)'),
+        description: language === 'ku'
+          ? 'لوتکە یەکسانەکان (Equal Highs) کە وەک موگناتیس کار دەکات بۆ ڕاکێشانی داواکاریی بانکەکان.'
+          : (language === 'fa'
+            ? 'ترکیب سقف‌های برابر (Equal Highs) که بهعنوان آهنربای جذب سفارشات موسسات عمل می‌کند.'
+            : 'Double highs structures creating a massive liquidity pool for institutional sweeps.'),
         volProfile: 'Extremely Heavy (124k Lots)',
         status: 'IMMEDIATE GAIN'
       },
@@ -184,10 +191,12 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
         id: 'lit-4',
         type: 'IDM_LOW',
         price: +(spotPrice * 0.9978).toFixed(sym === 'EURUSD' || sym === 'GBPUSD' || sym === 'AUDUSD' || sym === 'USDCAD' ? 4 : 2),
-        label: language === 'fa' ? 'القاء صعودی (Inducement Low)' : 'Bullish Inducement (LIT IDM)',
-        description: language === 'fa'
-          ? 'القای معامله‌گران به خرید زودرس در محدوده حمایتی ضعیف کلاسیک پیش از سابیده شدن کف.'
-          : 'Low-level inducement to trap early buyers prior to the final stop-loss hunt.',
+        label: language === 'ku' ? 'هاندەری بەرزبوونەوە (Inducement Low)' : (language === 'fa' ? 'القاء صعودی (Inducement Low)' : 'Bullish Inducement (LIT IDM)'),
+        description: language === 'ku'
+          ? 'هاندانی کڕیاران بۆ کڕینی زوو لە زۆنی لاواز پێش هانتکردنی کۆتایی.'
+          : (language === 'fa'
+            ? 'القای معامله‌گران به خرید زودرس در محدوده حمایتی ضعیف کلاسیک پیش از سابیده شدن کف.'
+            : 'Low-level inducement to trap early buyers prior to the final stop-loss hunt.'),
         volProfile: 'Light Vol (19k Lots)',
         status: 'UNMITIGATED'
       },
@@ -195,10 +204,12 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
         id: 'lit-5',
         type: 'LIT_SWEEP',
         price: +(spotPrice * 0.9925).toFixed(sym === 'EURUSD' || sym === 'GBPUSD' || sym === 'AUDUSD' || sym === 'USDCAD' ? 4 : 2),
-        label: language === 'fa' ? 'سوئیپ نقدینگی القایی (Sweep Zone)' : 'Inducement Sweep Zone (SSL)',
-        description: language === 'fa'
-          ? 'سطح شکار نهایی استاپ‌لاس‌های معامله‌گران سبک کلاسیک جهت تجمیع سفارشات خرید بانک‌های بزرگ.'
-          : 'Major stop-loss sweep tier under Liquidity Inducement Theorem to trigger institutional buy orders.',
+        label: language === 'ku' ? 'سوویپی نەختینەی هاندراو (Sweep Zone)' : (language === 'fa' ? 'سوئیپ نقدینگی القایی (Sweep Zone)' : 'Inducement Sweep Zone (SSL)'),
+        description: language === 'ku'
+          ? 'ئاستی ڕاوکردنی کۆتاییی ستۆپ‌لۆسەکان بۆ کۆکردنەوەی داواکاریی کڕینی بانکە گەورەکان.'
+          : (language === 'fa'
+            ? 'سطح شکار نهایی استاپ‌لاس‌های معامله‌گران سبک کلاسیک جهت تجمیع سفارشات خرید بانک‌های بزرگ.'
+            : 'Major stop-loss sweep tier under Liquidity Inducement Theorem to trigger institutional buy orders.'),
         volProfile: 'Super-Cluster (240k Lots)',
         status: 'STRONG DEMAND'
       }
@@ -211,10 +222,12 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
         id: 'lvl-1',
         type: 'OB_BEARISH',
         price: +(spotPrice * 1.0042).toFixed(sym === 'EURUSD' || sym === 'GBPUSD' || sym === 'AUDUSD' || sym === 'USDCAD' ? 4 : 2),
-        label: language === 'fa' ? 'بلاک سفارش فروش (H4)' : 'Bearish OB (H4)',
-        description: language === 'fa' 
-          ? 'بلاک سفارش نزولی قدرتمند مجهز به نقدینگی بالا در سقف تایم فریم.'
-          : 'High-probability bearish supply zone with institutional mitigation bias.',
+        label: language === 'ku' ? 'بلۆکی داواکاریی فرۆشتن (H4)' : (language === 'fa' ? 'بلاک سفارش فروش (H4)' : 'Bearish OB (H4)'),
+        description: language === 'ku'
+          ? 'ئۆردەربلۆکی دابەزینی بەهێز لەگەڵ نەختینەی بەرز لە لوتکەی تایم‌فرەیم.'
+          : (language === 'fa' 
+            ? 'بلاک سفارش نزولی قدرتمند مجهز به نقدینگی بالا در سقف تایم فریم.'
+            : 'High-probability bearish supply zone with institutional mitigation bias.'),
         volProfile: '95k Lots Blocked',
         status: 'UNMITIGATED'
       },
@@ -222,10 +235,12 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
         id: 'lvl-2',
         type: 'BSL',
         price: +(spotPrice * 1.0085).toFixed(sym === 'EURUSD' || sym === 'GBPUSD' || sym === 'AUDUSD' || sym === 'USDCAD' ? 4 : 2),
-        label: language === 'fa' ? 'نقدینگی خریداران (سقف روزانه)' : 'Buy-Side Liquidity (Daily High)',
-        description: language === 'fa'
-          ? 'استخر نقدینگی خرید فعال واقع در بالای اوج قیمت امروز.'
-          : 'Buy stops cluster indicating potential stop-run or breakout zone.',
+        label: language === 'ku' ? 'نەختینەی کڕیاران (لوتکەی ڕۆژانە)' : (language === 'fa' ? 'نقدینگی خریداران (سقف روزانه)' : 'Buy-Side Liquidity (Daily High)'),
+        description: language === 'ku'
+          ? 'پووڵی نەختینەی کڕینی چالاک لە سەرووی بەرزترین نرخی ئەمڕۆ.'
+          : (language === 'fa'
+            ? 'استخر نقدینگی خرید فعال واقع در بالای اوج قیمت امروز.'
+            : 'Buy stops cluster indicating potential stop-run or breakout zone.'),
         volProfile: 'Active Pool (110k Lots)',
         status: 'HIGH INTENSITY'
       },
@@ -233,10 +248,12 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
         id: 'lvl-3',
         type: 'FVG',
         price: +(spotPrice * 1.0015).toFixed(sym === 'EURUSD' || sym === 'GBPUSD' || sym === 'AUDUSD' || sym === 'USDCAD' ? 4 : 2),
-        label: language === 'fa' ? 'شکاف ارزش منصفانه (H1)' : 'Fair Value Gap (H1)',
-        description: language === 'fa'
-          ? 'ناکارآمدی قیمتی برجا مانده از حرکت پرشتاب بازار صعودی.'
-          : 'Inefficient price delivery zone that acts as a physical magnet.',
+        label: language === 'ku' ? 'کەلێنی بەهای دادپەروەرانە (H1)' : (language === 'fa' ? 'شکاف ارزش منصفانه (H1)' : 'Fair Value Gap (H1)'),
+        description: language === 'ku'
+          ? 'بێهاوسەنگیی نرخ کە بەهۆی جووڵەی خێرای بازاڕ دروست بووە و وەک موگناتیس کار دەکات.'
+          : (language === 'fa'
+            ? 'ناکارآمدی قیمتی برجا مانده از حرکت پرشتاب بازار صعودی.'
+            : 'Inefficient price delivery zone that acts as a physical magnet.'),
         volProfile: 'Gap Size: 12.5 Pips',
         status: 'IMBALANCE'
       },
@@ -244,10 +261,12 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
         id: 'lvl-4',
         type: 'OB_BULLISH',
         price: +(spotPrice * 0.9958).toFixed(sym === 'EURUSD' || sym === 'GBPUSD' || sym === 'AUDUSD' || sym === 'USDCAD' ? 4 : 2),
-        label: language === 'fa' ? 'بلاک سفارش خرید (H1)' : 'Bullish OB (H1)',
-        description: language === 'fa'
-          ? 'بستر انباشت خرید بزرگ موسساتی مناسب برای اردرگذاری مجدد.'
-          : 'Premium institutional buying tier aligned with discount zone.',
+        label: language === 'ku' ? 'بلۆکی داواکاریی کڕین (H1)' : (language === 'fa' ? 'بلاک سفارش خرید (H1)' : 'Bullish OB (H1)'),
+        description: language === 'ku'
+          ? 'ناوچەی کۆکردنەوەی کڕینی گەورەی دامەزراوەیی بۆ داواکاریی نوێ.'
+          : (language === 'fa'
+            ? 'بستر انباشت خرید بزرگ موسساتی مناسب برای اردرگذاری مجدد.'
+            : 'Premium institutional buying tier aligned with discount zone.'),
         volProfile: '142k Institutional Lots',
         status: 'KEY DECISION BAR'
       },
@@ -255,10 +274,12 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
         id: 'lvl-5',
         type: 'SSL',
         price: +(spotPrice * 0.9902).toFixed(sym === 'EURUSD' || sym === 'GBPUSD' || sym === 'AUDUSD' || sym === 'USDCAD' ? 4 : 2),
-        label: language === 'fa' ? 'نقدینگی فروشندگان (کف هفتگی)' : 'Sell-Side Liquidity (Weekly Low)',
-        description: language === 'fa'
-          ? 'سطح کلیدی نقدینگی فروشندگان مستقر در زیر کلاستر حمایتی پهن.'
-          : 'Sell stops pool representing heavy sell pressure mitigations.',
+        label: language === 'ku' ? 'نەختینەی فرۆشیاران (کفی هەفتانە)' : (language === 'fa' ? 'نقدینگی فروشندگان (کف هفتگی)' : 'Sell-Side Liquidity (Weekly Low)'),
+        description: language === 'ku'
+          ? 'ئاستی سەرەکیی نەختینەی فرۆشیاران لە ژێر کلاستەری پشتیوانیی بەهێز.'
+          : (language === 'fa'
+            ? 'سطح کلیدی نقدینگی فروشندگان مستقر در زیر کلاستر حمایتی پهن.'
+            : 'Sell stops pool representing heavy sell pressure mitigations.'),
         volProfile: 'Active Pool (185k Lots)',
         status: 'CRITICAL SUPPORT'
       }
@@ -336,12 +357,13 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
   const calcPotentialProfitEx = calcTpDiff * calcLotMultiplier * (parseFloat(calcFormattedLots) || 0);
   const calcRrRatio = calcSlDiff > 0 && calcTpDiff > 0 ? (calcTpDiff / calcSlDiff).toFixed(2) : '0.00';
   const calcReturnPercentage = calcBalance > 0 ? (calcPotentialProfitEx / calcBalance) * 100 : 0;
+  const isRtl = language === 'fa' || language === 'ku';
 
   return (
-    <div className="space-y-8 pb-20 select-none font-sans overflow-hidden">
+    <div className="space-y-8 pb-20 font-sans">
       
       {/* HEADER SECTION WITH MODERN GLASS NESTING */}
-      <div className="p-6 md:p-8 rounded-3xl border border-white/5 bg-[#0b1424]/40 backdrop-blur-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl relative" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+      <div className="p-6 md:p-8 rounded-3xl border border-white/5 bg-[#0b1424]/40 backdrop-blur-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-6 shadow-xl relative" dir={isRtl ? 'rtl' : 'ltr'}>
         <div className="space-y-2">
           <div className="flex items-center gap-2">
             <span className={`h-2.5 w-2.5 rounded-full ${activeStrategy === 'SMC' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' : 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'}`}></span>
@@ -351,20 +373,24 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
           </div>
           <h1 className="text-xl md:text-2xl font-black text-white tracking-tight leading-none leading-relaxed">
             {activeStrategy === 'SMC' ? (
-              language === 'fa' ? `ترسیم فنی ساختار بازار SMC (${activeAsset.symbol})` : `SMC Market Structure Mapping (${activeAsset.symbol})`
+              language === 'ku' ? `نەخشەی پێکهاتەی تەکنیکی بازاڕ SMC (${activeAsset.symbol})` : (language === 'fa' ? `ترسیم فنی ساختار بازار SMC (${activeAsset.symbol})` : `SMC Market Structure Mapping (${activeAsset.symbol})`)
             ) : (
-              language === 'fa' ? `تحلیل نقدینگی و هانت پیشرفته LIT (${activeAsset.symbol})` : `LIT Algorithmic Inducement (${activeAsset.symbol})`
+              language === 'ku' ? `شیکاریی نەختینە و هانتی پێشکەوتووی LIT (${activeAsset.symbol})` : (language === 'fa' ? `تحلیل نقدینگی و هانت پیشرفته LIT (${activeAsset.symbol})` : `LIT Algorithmic Inducement (${activeAsset.symbol})`)
             )}
           </h1>
           <p className="text-xs text-slate-400 font-medium">
             {activeStrategy === 'SMC' ? (
-              language === 'fa' 
-                ? `شناسایی نواحی تقاضا، عرضه و بلاک‌های سفارش معتبر برای ${activeAsset.nameFa}` 
-                : `Precision supply/demand order blocks with real-time volatility estimates for ${activeAsset.name}`
+              language === 'ku'
+                ? `دیاریکردنی زۆنەکانی خستنەڕوو، داواکاری و ئۆردەربلۆکی دروست بۆ ${activeAsset.symbol}`
+                : (language === 'fa' 
+                  ? `شناسایی نواحی تقاضا، عرضه و بلاک‌های سفارش معتبر برای ${activeAsset.nameFa}` 
+                  : `Precision supply/demand order blocks with real-time volatility estimates for ${activeAsset.name}`)
             ) : (
-              language === 'fa'
-                ? `نقشه‌برداری سطوح فریب خرده‌پاها و پوزیشن‌های القایی برای ${activeAsset.nameFa}`
-                : `Engineered breakout traps and liquidity inducement boundaries for ${activeAsset.name}`
+              language === 'ku'
+                ? `نەخشەکێشانی فێڵەکانی بازاڕ و شوێنی هانتکردنی نەختینە بۆ ${activeAsset.symbol}`
+                : (language === 'fa'
+                  ? `نقشه‌برداری سطوح فریب خرده‌پاها و پوزیشن‌های القایی برای ${activeAsset.nameFa}`
+                  : `Engineered breakout traps and liquidity inducement boundaries for ${activeAsset.name}`)
             )}
           </p>
         </div>
@@ -390,10 +416,10 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
         <div className="lg:col-span-7 space-y-6">
           
           {/* SYMBOL SWITCHER FOR CHART */}
-          <div className="space-y-2" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+          <div className="space-y-2" dir={isRtl ? 'rtl' : 'ltr'}>
             <div className="flex items-center gap-1.5 justify-between">
               <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">
-                {language === 'fa' ? 'دیده بان و انتخاب جفت‌ارز معاملاتی:' : 'Live Asset Tickers Selector:'}
+                {language === 'ku' ? 'چاودێری و هەڵبژاردنی جووتە دراوی مامەڵە:' : (language === 'fa' ? 'دیده بان و انتخاب جفت‌ارز معاملاتی:' : 'Live Asset Tickers Selector:')}
               </span>
               <span className="text-[9px] text-slate-500 font-mono font-medium tracking-widest hidden sm:inline-block">
                 TOTAL: {assets.length} TRADABLES
@@ -473,7 +499,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                 </span>
               </div>
               <div className="bg-white/5 border border-white/5 px-2.5 py-0.5 rounded-lg text-[9px] text-slate-300 font-mono">
-                {selectedSymbol} • {language === 'fa' ? 'تایم‌فریم ' + timeframe : timeframe + ' TIMEFRAME'}
+                {selectedSymbol} • {language === 'ku' ? 'تایم‌فرەیمی ' + timeframe : (language === 'fa' ? 'تایم‌فریم ' + timeframe : timeframe + ' TIMEFRAME')}
               </div>
             </div>
 
@@ -486,7 +512,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
           </div>
 
           {/* DYNAMIC PREMIUM LOT & POSITION SIZE CALCULATOR */}
-          <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-tr from-slate-900/60 via-[#0d141e]/50 to-[#0a1b24]/40 border border-white/5 relative overflow-hidden backdrop-blur-xl space-y-5" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+          <div className="p-5 sm:p-6 rounded-3xl bg-gradient-to-tr from-slate-900/60 via-[#0d141e]/50 to-[#0a1b24]/40 border border-white/5 relative overflow-hidden backdrop-blur-xl space-y-5" dir={isRtl ? 'rtl' : 'ltr'}>
             <div className="absolute top-0 left-0 w-32 h-32 bg-amber-500/[0.02] rounded-full filter blur-2xl pointer-events-none" />
             <div className="absolute -bottom-10 -right-10 w-44 h-44 bg-blue-500/[0.015] rounded-full filter blur-3xl pointer-events-none" />
 
@@ -498,10 +524,10 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                 </div>
                 <div>
                   <h3 className="text-xs font-black text-white tracking-wide uppercase">
-                    {language === 'fa' ? 'محاسبه‌گر حرفه‌ای لات خط‌مشی و مدیریت ریسک' : 'Premium Risk & Position Size Calculator'}
+                    {language === 'ku' ? 'ژمێرەری لۆت و بەڕێوەبردنی مەترسی' : (language === 'fa' ? 'محاسبه‌گر حرفه‌ای لات خط‌مشی و مدیریت ریسک' : 'Premium Risk & Position Size Calculator')}
                   </h3>
                   <p className="text-[9px] text-slate-400 font-medium">
-                    {language === 'fa' ? 'همگام‌سازی هوشمند با مشخصات هر دارایی معاملاتی' : 'Auto-tailored to contract specs of selected ticker'}
+                    {language === 'ku' ? 'هاوکاتکردنی ژیرانە لەگەڵ تایبەتمەندییەکانی داراییەکە' : (language === 'fa' ? 'همگام‌سازی هوشمند با مشخصات هر دارایی معاملاتی' : 'Auto-tailored to contract specs of selected ticker')}
                   </p>
                 </div>
               </div>
@@ -509,10 +535,10 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                 type="button"
                 onClick={() => syncWithLivePrice()}
                 className="p-1.5 hover:bg-white/5 rounded-lg text-slate-400 hover:text-white transition-all border border-white/5 flex items-center gap-1 text-[9px] font-bold cursor-pointer"
-                title={language === 'fa' ? 'همگام‌سازی قیمت با بازار لایو' : 'Sync to live price'}
+                title={language === 'ku' ? 'هاوکاتکردنی نرخ لەگەڵ بازاڕی ڕاستەوخۆ' : (language === 'fa' ? 'همگام‌سازی قیمت با بازار لایو' : 'Sync to live price')}
               >
                 <RefreshCw className="w-3 h-3 text-sky-400" />
-                <span>{language === 'fa' ? 'زنده' : 'Live'}</span>
+                <span>{language === 'ku' ? 'ڕاستەوخۆ' : (language === 'fa' ? 'زنده' : 'Live')}</span>
               </button>
             </div>
 
@@ -528,7 +554,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                 }`}
               >
                 <TrendingUp className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-emerald-400 shrink-0" />
-                <span>{language === 'fa' ? 'خرید (BUY / LONG)' : 'BUY (Long)'}</span>
+                <span>{language === 'ku' ? 'کڕین (BUY / LONG)' : (language === 'fa' ? 'خرید (BUY / LONG)' : 'BUY (Long)')}</span>
               </button>
               <button
                 type="button"
@@ -540,7 +566,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                 }`}
               >
                 <TrendingDown className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-rose-400 shrink-0" />
-                <span>{language === 'fa' ? 'فروش (SELL / SHORT)' : 'SELL (Short)'}</span>
+                <span>{language === 'ku' ? 'فرۆشتن (SELL / SHORT)' : (language === 'fa' ? 'فروش (SELL / SHORT)' : 'SELL (Short)')}</span>
               </button>
             </div>
 
@@ -551,7 +577,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
               <div className="space-y-3 p-3.5 bg-white/2 rounded-2xl border border-white/5">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1 text-right">
-                    <span>{language === 'fa' ? 'موجودی حساب (دلار):' : 'Account Balance (USD):'}</span>
+                    <span>{language === 'ku' ? 'باڵانسی هەژمار (دۆلار):' : (language === 'fa' ? 'موجودی حساب (دلار):' : 'Account Balance (USD):')}</span>
                   </label>
                   <div className="relative">
                     <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] text-slate-500 font-mono font-bold">$</span>
@@ -566,7 +592,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
 
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-300 flex justify-between items-center text-right">
-                    <span>{language === 'fa' ? 'درصد ریسک معامله (%)' : 'Risk Percentage:'}</span>
+                    <span>{language === 'ku' ? 'ڕێژەی مەترسی (%)' : (language === 'fa' ? 'درصد ریسک معامله (%)' : 'Risk Percentage:')}</span>
                     <span className="text-[9px] font-mono font-extrabold text-[#6f87a0]">{calcRiskPercent}%</span>
                   </label>
                   <div className="flex gap-2 items-center">
@@ -595,7 +621,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
               <div className="space-y-3 p-3.5 bg-white/2 rounded-2xl border border-white/5">
                 <div className="space-y-1.5">
                   <label className="text-[10px] font-bold text-slate-300 flex justify-between items-center text-right">
-                    <span>{language === 'fa' ? 'قیمت ورود:' : 'Entry Price:'}</span>
+                    <span>{language === 'ku' ? 'نرخی چوونەژوورەوە:' : (language === 'fa' ? 'قیمت ورود:' : 'Entry Price:')}</span>
                     <span className="text-[8px] font-semibold text-slate-500 uppercase font-mono">{selectedSymbol} specs</span>
                   </label>
                   <input 
@@ -612,7 +638,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1 text-right">
                       <span className="w-1.5 h-1.5 rounded-full bg-rose-500 inline-block shrink-0" />
-                      <span>{language === 'fa' ? 'حد ضرر (SL):' : 'Stop Loss (SL):'}</span>
+                      <span>{language === 'ku' ? 'ڕاگرتنی زیان (SL):' : (language === 'fa' ? 'حد ضرر (SL):' : 'Stop Loss (SL):')}</span>
                     </label>
                     <input 
                       type="number" 
@@ -625,7 +651,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                   <div className="space-y-1.5">
                     <label className="text-[10px] font-bold text-slate-300 flex items-center gap-1 text-right">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 inline-block shrink-0" />
-                      <span>{language === 'fa' ? 'حد سود (TP):' : 'Take Profit (TP):'}</span>
+                      <span>{language === 'ku' ? 'دیاریکردنی قازانج (TP):' : (language === 'fa' ? 'حد سود (TP):' : 'Take Profit (TP):')}</span>
                     </label>
                     <input 
                       type="number" 
@@ -647,12 +673,14 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
               <div className="flex flex-col sm:flex-row justify-between items-center gap-3 bg-gradient-to-tr from-amber-500/[0.03] to-[#6f87a0]/[0.05] p-3.5 rounded-xl border border-amber-500/10">
                 <div className="text-center sm:text-right">
                   <span className="text-[9px] text-[#6f87a0] font-black uppercase tracking-wider block">
-                    {language === 'fa' ? 'حجم بهینه برای ورود ایمن به پوزیشن' : 'SUGGESTED LOT SIZE FOR SAFE RISK LIMIT'}
+                    {language === 'ku' ? 'قەبارەی گونجاوی لۆت بۆ چوونەژوورەوەی پارێزراو' : (language === 'fa' ? 'حجم بهینه برای ورود ایمن به پوزیشن' : 'SUGGESTED LOT SIZE FOR SAFE RISK LIMIT')}
                   </span>
                   <span className="text-xs text-slate-200 block font-medium mt-0.5">
-                    {language === 'fa' 
-                      ? `بابت دارایی ${selectedSymbol} با اهرم پیش‌فرض` 
-                      : `Tailored position structure for active ${selectedSymbol}`}
+                    {language === 'ku'
+                      ? `بۆ دارایی ${selectedSymbol} بەپێی ڕێساکانی مەترسی`
+                      : (language === 'fa' 
+                        ? `بابت دارایی ${selectedSymbol} با اهرم پیش‌فرض` 
+                        : `Tailored position structure for active ${selectedSymbol}`)}
                   </span>
                 </div>
                 
@@ -660,7 +688,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                   <div className="px-5 py-2.5 rounded-xl bg-slate-900 border border-amber-500/30 shadow-[0_4px_24px_rgba(245,158,11,0.08)] flex flex-col items-center justify-center">
                     <span className="text-lg font-black text-amber-400 font-mono tracking-wider">{calcFormattedLots}</span>
                     <span className="text-[8px] font-black tracking-widest text-[#6f87a0] uppercase mt-0.5">
-                      {language === 'fa' ? 'لات استاندارد' : 'STD LOTS'}
+                      {language === 'ku' ? 'لۆتی ستاندارد' : (language === 'fa' ? 'لات استاندارد' : 'STD LOTS')}
                     </span>
                   </div>
                 </div>
@@ -671,49 +699,49 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                 
                 <div className="p-2.5 rounded-xl bg-white/2 border border-white/5">
                   <span className="text-[9px] text-slate-500 font-bold block">
-                    {language === 'fa' ? 'زیان احتمالی (ریسک)' : 'Potential USD Risk'}
+                    {language === 'ku' ? 'زیانی ئەگەری (مەترسی)' : (language === 'fa' ? 'زیان احتمالی (ریسک)' : 'Potential USD Risk')}
                   </span>
                   <span className="text-xs font-mono font-black text-rose-400 block mt-1">
                     -${calcRiskAmountEx.toFixed(1)}
                   </span>
                   <span className="text-[8.5px] font-mono font-semibold text-slate-400 block">
-                    {calcRiskPercent}% {language === 'fa' ? 'موجودی' : 'account'}
+                    {calcRiskPercent}% {language === 'ku' ? 'لە باڵانس' : (language === 'fa' ? 'موجودی' : 'account')}
                   </span>
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-white/2 border border-white/5">
                   <span className="text-[9px] text-slate-500 font-bold block">
-                    {language === 'fa' ? 'سود احتمالی (ریوارد)' : 'Potential USD Reward'}
+                    {language === 'ku' ? 'قازانجی ئەگەری' : (language === 'fa' ? 'سود احتمالی (ریوارد)' : 'Potential USD Reward')}
                   </span>
                   <span className="text-xs font-mono font-black text-emerald-400 block mt-1">
                     +${calcPotentialProfitEx.toLocaleString(undefined, { maximumFractionDigits: 1 })}
                   </span>
                   <span className="text-[8.5px] font-mono font-semibold text-slate-400 block">
-                    {calcReturnPercentage.toFixed(1)}% {language === 'fa' ? 'رشد' : 'growth'}
+                    {calcReturnPercentage.toFixed(1)}% {language === 'ku' ? 'گەشە' : (language === 'fa' ? 'رشد' : 'growth')}
                   </span>
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-white/2 border border-white/5">
                   <span className="text-[9px] text-slate-500 font-bold block font-mono">
-                    {language === 'fa' ? 'نسبت ریسک/ریوارد' : 'Risk/Reward Ratio'}
+                    {language === 'ku' ? 'ڕێژەی مەترسی/قازانج' : (language === 'fa' ? 'نسبت ریسک/ریوارد' : 'Risk/Reward Ratio')}
                   </span>
                   <span className={`text-xs font-mono font-black block mt-1 ${parseFloat(calcRrRatio) >= 1.5 ? 'text-indigo-400' : 'text-slate-200'}`}>
                     1 : {calcRrRatio}
                   </span>
                   <span className="text-[8.5px] font-bold text-slate-500 block">
-                    {parseFloat(calcRrRatio) >= 1.5 ? (language === 'fa' ? '🎯 عالی' : '🎯 IDEAL') : (language === 'fa' ? '⚠️ ریسکی' : '⚠️ HIGH RISK')}
+                    {parseFloat(calcRrRatio) >= 1.5 ? (language === 'ku' ? '🎯 زۆر باش' : (language === 'fa' ? '🎯 عالی' : '🎯 IDEAL')) : (language === 'ku' ? '⚠️ پڕمەترسی' : (language === 'fa' ? '⚠️ ریسکی' : '⚠️ HIGH RISK'))}
                   </span>
                 </div>
 
                 <div className="p-2.5 rounded-xl bg-white/2 border border-white/5">
                   <span className="text-[9px] text-slate-500 font-bold block">
-                    {language === 'fa' ? 'فاصله حد ضرر (پیپ)' : 'SL Distance (Pips)'}
+                    {language === 'ku' ? 'مەودای زیان (پیپ)' : (language === 'fa' ? 'فاصله حد ضرر (پیپ)' : 'SL Distance (Pips)')}
                   </span>
                   <span className="text-xs font-mono font-black text-slate-200 block mt-1">
-                    {calcSlPips} {language === 'fa' ? 'پیپ' : 'Pips'}
+                    {calcSlPips} {language === 'ku' ? 'پیپ' : (language === 'fa' ? 'پیپ' : 'Pips')}
                   </span>
                   <span className="text-[8.5px] font-bold text-slate-500 block">
-                    TP: {calcTpPips} {language === 'fa' ? 'پیپ' : 'Pips'}
+                    TP: {calcTpPips} {language === 'ku' ? 'پیپ' : (language === 'fa' ? 'پیپ' : 'Pips')}
                   </span>
                 </div>
 
@@ -728,9 +756,9 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
         <div className="lg:col-span-5 space-y-6">
 
           {/* STRATEGY SWITCHER (SMC / LIT) */}
-          <div className="space-y-4" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+          <div className="space-y-4" dir={isRtl ? 'rtl' : 'ltr'}>
             <span className="text-[10px] text-slate-400 block font-bold uppercase tracking-wider">
-              {language === 'fa' ? 'انتخاب متدولوژی پیاده‌سازی نقشه سطوح:' : 'Analytical Methodology:'}
+              {language === 'ku' ? 'هەڵبژاردنی میتۆدۆلۆژیای نەخشەی ئاستەکان:' : (language === 'fa' ? 'انتخاب متدولوژی پیاده‌سازی نقشه سطوح:' : 'Analytical Methodology:')}
             </span>
             <div className="grid grid-cols-2 bg-[#050b13]/80 border border-white/5 p-1 rounded-2xl gap-1">
               <button
@@ -745,7 +773,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                     : 'text-slate-400 hover:text-white hover:bg-white/5'
                 }`}
               >
-                {language === 'fa' ? 'مفاهیم پول هوشمند (SMC)' : 'Smart Money (SMC)'}
+                {language === 'ku' ? 'چەمکەکانی پارەی ژیر (SMC)' : (language === 'fa' ? 'مفاهیم پول هوشمند (SMC)' : 'Smart Money (SMC)')}
               </button>
               <button
                 type="button"
@@ -759,7 +787,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                     : 'text-slate-400 hover:text-white hover:bg-white/5'
                 }`}
               >
-                {language === 'fa' ? 'تئوری القاء نقدینگی (LIT)' : 'Liquidity Theory (LIT)'}
+                {language === 'ku' ? 'تیۆری هاندانی نەختینە (LIT)' : (language === 'fa' ? 'تئوری القاء نقدینگی (LIT)' : 'Liquidity Theory (LIT)')}
                 {!isVip && (
                   <span className="absolute -top-1.5 -right-1.5 h-4 px-1 rounded-md bg-amber-500 text-[8px] text-slate-950 font-black tracking-widest flex items-center justify-center border border-slate-900 uppercase">
                     VIP
@@ -773,9 +801,9 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                 <Layers className={`w-4 h-4 ${activeStrategy === 'SMC' ? 'text-blue-500' : 'text-amber-500'}`} />
                 <h2 className="text-sm font-black text-white tracking-tight uppercase">
                   {activeStrategy === 'SMC' ? (
-                    language === 'fa' ? `کلاستر سطوح و اردر بلاک‌های فعال` : `Smart Money Order Clusters`
+                    language === 'ku' ? 'کۆمەڵە ئاست و ئۆردەربلۆکە چالاکەکان' : (language === 'fa' ? `کلاستر سطوح و اردر بلاک‌های فعال` : `Smart Money Order Clusters`)
                   ) : (
-                    language === 'fa' ? `استخرهای القایی و سطوح شکار نقدینگی` : `LIT Inducement & Sweeps Mappings`
+                    language === 'ku' ? 'حەوزەکانی هاندەر و ئاستەکانی ڕاوکردنی نەختینە' : (language === 'fa' ? `استخرهای القایی و سطوح شکار نقدینگی` : `LIT Inducement & Sweeps Mappings`)
                   )}
                 </h2>
               </div>
@@ -795,17 +823,21 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                 <div className="space-y-1.5 max-w-[290px]">
                   <h3 className="text-xs font-black text-amber-400 flex items-center gap-1.5 justify-center uppercase font-mono tracking-widest">
                     <Sparkles className="w-4 h-4 text-amber-400 animate-spin" />
-                    <span>{language === 'fa' ? 'نسخه ویژه اونیگاما (VIP)' : 'Onigama VIP Premium'}</span>
+                    <span>{language === 'ku' ? 'وەشانی تایبەتی Onigama (VIP)' : (language === 'fa' ? 'نسخه ویژه اونیگاما (VIP)' : 'Onigama VIP Premium')}</span>
                   </h3>
                   <p className="text-[11px] text-slate-300 leading-relaxed font-sans font-medium">
-                    {language === 'fa' 
-                      ? 'دسترسی فعال به تئوری القای نقدینگی و تله‌های هوشمند LIT مخصوص اعضای طلایی اونیگاما است. با ثبت لایسنس آزمایشی در تنظیمات فوراً این بخش را فعال کنید!'
-                      : 'Liquidity Inducement Theorem structures and advanced stop sweeps are reserved for premium members.'}
+                    {language === 'ku'
+                      ? 'دەستڕاگەیشتن بە تیۆری هاندانی نەختینە و تەڵە ژیرەکانی LIT تایبەتە بە ئەندامانی زێڕینی Onigama. بە تۆمارکردنی لایسەنسی ئەزموونی لە ڕێکخستنەکان ئەم بەشە چالاک بکە!'
+                      : (language === 'fa' 
+                        ? 'دسترسی فعال به تئوری القای نقدینگی و تله‌های هوشمند LIT مخصوص اعضای طلایی اونیگاما است. با ثبت لایسنس آزمایشی در تنظیمات فوراً این بخش را فعال کنید!'
+                        : 'Liquidity Inducement Theorem structures and advanced stop sweeps are reserved for premium members.')}
                   </p>
                   <p className="text-[10px] text-slate-500 font-sans font-semibold">
-                    {language === 'fa'
-                      ? '💡 کلیدهای آزمایشی رایگان در صفحه «تنظیمات» درج شده است.'
-                      : '💡 Free license keys are provided in the "Settings" tab.'}
+                    {language === 'ku'
+                      ? '💡 کلیلە ئەزموونییە بێبەرامبەرەکان لە پەڕەی «ڕێکخستنەکان» دانراون.'
+                      : (language === 'fa'
+                        ? '💡 کلیدهای آزمایشی رایگان در صفحه «تنظیمات» درج شده است.'
+                        : '💡 Free license keys are provided in the "Settings" tab.')}
                   </p>
                 </div>
                 {onNavigate && (
@@ -816,7 +848,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                     }}
                     className="py-3 px-5 bg-gradient-to-r from-amber-500 to-yellow-600 hover:from-amber-400 hover:to-yellow-500 text-slate-950 font-black rounded-xl text-xs transition-all cursor-pointer flex items-center gap-1.5 shadow-xl active:scale-95"
                   >
-                    <span>{language === 'fa' ? '🔑 رفتن به فعال‌سازی لایسنس' : '🔑 Grab Activation Key'}</span>
+                    <span>{language === 'ku' ? '🔑 چوون بۆ چالاککردنی لایسەنس' : (language === 'fa' ? '🔑 رفتن به فعال‌سازی لایسنس' : '🔑 Grab Activation Key')}</span>
                   </button>
                 )}
               </div>
@@ -824,7 +856,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
 
             <div className={`space-y-4 transition-all duration-300 ${activeStrategy === 'LIT' && !isVip ? 'opacity-10 pointer-events-none filter blur-sm' : ''}`}>
               {/* LEVELS CONTAINER LIST WITH ANIMATION AND PROXIMITY SCALING */}
-              <div className="space-y-3" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+              <div className="space-y-3" dir={isRtl ? 'rtl' : 'ltr'}>
                 <AnimatePresence mode="popLayout" initial={false}>
                   {levels.map((lvl) => {
                     const distance = Math.abs(price - lvl.price);
@@ -891,7 +923,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                               {formatValue(lvl.price, selectedSymbol)}
                             </span>
                             <span className={`text-[9px] font-mono block font-bold ${isAbove ? 'text-rose-400' : 'text-emerald-400'}`}>
-                              {percentStr} {isAbove ? (language === 'fa' ? 'بالای لایو' : 'above spot') : (language === 'fa' ? 'پایین لایو' : 'below spot')}
+                              {percentStr} {isAbove ? (language === 'ku' ? 'سەرووی نرخی لایڤ' : (language === 'fa' ? 'بالای لایو' : 'above spot')) : (language === 'ku' ? 'خوارووی نرخی لایڤ' : (language === 'fa' ? 'پایین لایو' : 'below spot'))}
                             </span>
                           </div>
                           
@@ -901,7 +933,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                             </span>
                             {isNear && (
                               <span className={`text-[8px] font-black tracking-widest uppercase ${activeStrategy === 'SMC' ? 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20' : 'text-amber-400 bg-amber-500/10 border-amber-500/20'} px-1.5 py-0.5 rounded-md border animate-pulse`}>
-                                {language === 'fa' ? 'در بحران تماس قیمت' : 'PRICE IN ZONE'}
+                                {language === 'ku' ? 'نرخ لە ناوچەی کارلێکدایە' : (language === 'fa' ? 'در بحران تماس قیمت' : 'PRICE IN ZONE')}
                               </span>
                             )}
                           </div>
@@ -923,16 +955,16 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
               </div>
 
               {/* DYNAMIC INFORMATION GUIDELINE */}
-              <div className="p-5 bg-white/2 border border-white/5 rounded-3xl space-y-3 text-right relative overflow-hidden backdrop-blur-md group" dir={language === 'fa' ? 'rtl' : 'ltr'}>
+              <div className="p-5 bg-white/2 border border-white/5 rounded-3xl space-y-3 text-right relative overflow-hidden backdrop-blur-md group" dir={isRtl ? 'rtl' : 'ltr'}>
                 {/* Diagonal background visual */}
                 <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/[0.02] group-hover:bg-blue-500/5 rounded-full filter blur-xl transition-all duration-500"></div>
 
                 <div className="flex items-center gap-2 justify-end relative z-10">
                   <span className="text-xs font-black text-slate-200 tracking-wider font-mono">
                     {activeStrategy === 'SMC' ? (
-                      language === 'fa' ? 'راهنمای جامع سبک SMC نوین' : 'SMC ADVANCED CONCEPTS GUIDE'
+                      language === 'ku' ? 'ڕێبەری گشتگیری شێوازی پێشکەوتووی SMC' : (language === 'fa' ? 'راهنمای جامع سبک SMC نوین' : 'SMC ADVANCED CONCEPTS GUIDE')
                     ) : (
-                      language === 'fa' ? 'راهنمای جامع سبک القاء نقدینگی LIT' : 'LIT LIQUIDITY INDUCEMENT GUIDE'
+                      language === 'ku' ? 'ڕێبەری گشتگیری شێوازی هاندانی نەختینەی LIT' : (language === 'fa' ? 'راهنمای جامع سبک القاء نقدینگی LIT' : 'LIT LIQUIDITY INDUCEMENT GUIDE')
                     )}
                   </span>
                   <HelpCircle className={`w-4 h-4 ${activeStrategy === 'SMC' ? 'text-blue-500' : 'text-amber-500'}`} />
@@ -940,13 +972,17 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                 
                 <p className="text-slate-400 text-[11px] leading-relaxed relative z-10">
                   {activeStrategy === 'SMC' ? (
-                    language === 'fa' 
-                      ? 'بلاکهای خرید (Bullish OB) در کفهای حمایتی و بلاکهای فروش (Bearish OB) در سقفهای مقاومتی نشاندهنده ورود بانکها هستند. فایپها (FVG) بهعنوان آهنربای قیمتی عمل کرده و شکافها را میپوشانند.'
-                      : 'Bullish Order Blocks represent heavy institutional buying limits. Bearish Order Blocks mark premium supply distribution zones. Fair Value Gaps (FVGs) act as magnets that pull prices toward market mitigation points.'
+                    language === 'ku'
+                      ? 'بلۆکەکانی کڕین (Bullish OB) لە ئاستی پاڵپشتی و بلۆکەکانی فرۆشتن (Bearish OB) لە ئاستی بەرگری نیشاندەری هاتنەژوورەوەی بانکەکانن. کەلێنە بەهادارەکان (FVG) وەک موگناتیسی نرخ کاردەکەن و بۆشاییەکان پڕدەکەنەوە.'
+                      : (language === 'fa' 
+                        ? 'بلاکهای خرید (Bullish OB) در کفهای حمایتی و بلاکهای فروش (Bearish OB) در سقفهای مقاومتی نشاندهنده ورود بانکها هستند. فایپها (FVG) بهعنوان آهنربای قیمتی عمل کرده و شکافها را میپوشانند.'
+                        : 'Bullish Order Blocks represent heavy institutional buying limits. Bearish Order Blocks mark premium supply distribution zones. Fair Value Gaps (FVGs) act as magnets that pull prices toward market mitigation points.')
                   ) : (
-                    language === 'fa'
-                      ? 'استراتژی LIT (تئوری القاء نقدینگی) بر شناسایی تله‌ها و مهندسی نقدینگی تمرکز دارد. در این سبک، نقاط القای قیمت (Inducement) و نقدینگی مهندسی شده (Engineered Liq) به عنوان آهنربا معامله‌گران خرد را وسوسه کرده و مارکت با هانت استاپ‌های آنان شتاب می‌گیرد.'
-                      : 'LIT strategy (Liquidity Inducement Theorem) focuses on identifying institutional traps and engineered liquidity. Breakouts and early swings are lured in (induced) and swept before real smart money moves are initiated.'
+                    language === 'ku'
+                      ? 'ستراتیژی LIT (تیۆری هاندانی نەختینە) جەخت لەسەر دیاریکردنی تەڵەکان و نەختینەی ئەندازیاریکراو دەکاتەوە. لەم شێوازەدا، خاڵەکانی هاندانی نرخ و شکاندنی ساختە وەک موگناتیس بازرگانانی خرد ڕادەکێشن و مارکێت بە ڕاوکردنی ستۆپەکانیان دەجووڵێت.'
+                      : (language === 'fa'
+                        ? 'استراتژی LIT (تئوری القاء نقدینگی) بر شناسایی تله‌ها و مهندسی نقدینگی تمرکز دارد. در این سبک، نقاط القای قیمت (Inducement) و نقدینگی مهندسی شده (Engineered Liq) به عنوان آهنربا معامله‌گران خرد را وسوسه کرده و مارکت با هانت استاپ‌های آنان شتاب می‌گیرد.'
+                        : 'LIT strategy (Liquidity Inducement Theorem) focuses on identifying institutional traps and engineered liquidity. Breakouts and early swings are lured in (induced) and swept before real smart money moves are initiated.')
                   )}
                 </p>
 
@@ -955,7 +991,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                   onClick={() => setShowEduHandbook(true)}
                   className="flex justify-end gap-1 items-center text-[10px] text-blue-400 font-bold hover:text-blue-350 transition-colors cursor-pointer pt-1 relative z-10"
                 >
-                  <span>{language === 'fa' ? 'مشاهده دفترچه آموزشی کامل' : 'Read Full Educational Blueprint'}</span>
+                  <span>{language === 'ku' ? 'بینینی تەواوی دەفتەری فێرکاری' : (language === 'fa' ? 'مشاهده دفترچه آموزشی کامل' : 'Read Full Educational Blueprint')}</span>
                   <ChevronRight className="w-3 h-3 transform rotate-180" />
                 </div>
               </div>
@@ -973,7 +1009,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md"
-            dir={language === 'fa' ? 'rtl' : 'ltr'}
+            dir={isRtl ? 'rtl' : 'ltr'}
           >
             <motion.div 
               initial={{ scale: 0.95, y: 15 }}
@@ -990,10 +1026,10 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                   </div>
                   <div>
                     <h2 className="text-sm font-black text-white tracking-wide uppercase">
-                      {language === 'fa' ? 'دفترچه راهنمای آموزشی جامع اونیگاما' : 'Onigama Comprehensive Academy Guide'}
+                      {language === 'ku' ? 'دەفتەری ڕێبەری فێرکاریی گشتگیری Onigama' : (language === 'fa' ? 'دفترچه راهنمای آموزشی جامع اونیگاما' : 'Onigama Comprehensive Academy Guide')}
                     </h2>
                     <p className="text-[10px] text-slate-400">
-                      {language === 'fa' ? 'آموزش گام‌به‌گام سبک‌های معاملاتی SMC و LIT' : 'Step-by-step masterclass on SMC & LIT methodologies'}
+                      {language === 'ku' ? 'فێرکاریی هەنگاو بە هەنگاوی شێوازەکانی مامەڵەی SMC و LIT' : (language === 'fa' ? 'آموزش گام‌به‌گام سبک‌های معاملاتی SMC و LIT' : 'Step-by-step masterclass on SMC & LIT methodologies')}
                     </p>
                   </div>
                 </div>
@@ -1018,7 +1054,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                   }`}
                 >
                   <Layers className="w-3.5 h-3.5" />
-                  <span>{language === 'fa' ? 'مفاهیم SMC' : 'SMC Theory'}</span>
+                  <span>{language === 'ku' ? 'چەمکەکانی SMC' : (language === 'fa' ? 'مفاهیم SMC' : 'SMC Theory')}</span>
                 </button>
                 
                 <button
@@ -1031,7 +1067,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                   }`}
                 >
                   <Activity className="w-3.5 h-3.5" />
-                  <span>{language === 'fa' ? 'تئوری نقدینگی LIT' : 'LIT Theory'}</span>
+                  <span>{language === 'ku' ? 'تیۆری نەختینەی LIT' : (language === 'fa' ? 'تئوری نقدینگی LIT' : 'LIT Theory')}</span>
                 </button>
 
                 <button
@@ -1044,7 +1080,7 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                   }`}
                 >
                   <Target className="w-3.5 h-3.5" />
-                  <span>{language === 'fa' ? 'استراتژی و محاسبات' : 'Strategy & Lots'}</span>
+                  <span>{language === 'ku' ? 'ستراتیژی و لۆت' : (language === 'fa' ? 'استراتژی و محاسبات' : 'Strategy & Lots')}</span>
                 </button>
               </div>
 
@@ -1057,43 +1093,51 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                     <div className="p-4 rounded-2xl bg-blue-500/5 border border-blue-500/10 space-y-2">
                       <h4 className="text-xs font-extrabold text-blue-400 flex items-center gap-1.5 uppercase">
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>{language === 'fa' ? 'مکانیزم سفارشات پول هوشمند (SMC)' : 'Institutional Order Management (SMC)'}</span>
+                        <span>{language === 'ku' ? 'میکانیزمی فەرمانەکانی پارەی ژیر (SMC)' : (language === 'fa' ? 'مکانیزم سفارشات پول هوشمند (SMC)' : 'Institutional Order Management (SMC)')}</span>
                       </h4>
                       <p className="text-[11px] text-slate-300 leading-relaxed">
-                        {language === 'fa' 
-                          ? 'سبک مفاهیم پول هوشمند به ردپای بانک‌ها و موسسات بزرگ در بازار می‌پردازد. حجم‌های سنگین مالی باعث عدم تعادل و به جای گذاشتن بیس‌های معاملاتی ارزشمند می‌شود.'
-                          : 'Smart Money Concepts analyzes the footprint of major banking entities. Heavy block order distributions leave behind massive order imbalances and premium mitigation blocks.'}
+                        {language === 'ku'
+                          ? 'شێوازی چەمکەکانی پارەی ژیر شوێنپێی بانکەکان و دامەزراوە داراییە گەورەکان شی دەکاتەوە. قەبارەی گەورە دەبێتە هۆی ناهاوسەنگی نرخ و دروستبوونی ناوچەی بەهاداری کڕین و فرۆشتن.'
+                          : (language === 'fa' 
+                            ? 'سبک مفاهیم پول هوشمند به ردپای بانک‌ها و موسسات بزرگ در بازار می‌پردازد. حجم‌های سنگین مالی باعث عدم تعادل و به جای گذاشتن بیس‌های معاملاتی ارزشمند می‌شود.'
+                            : 'Smart Money Concepts analyzes the footprint of major banking entities. Heavy block order distributions leave behind massive order imbalances and premium mitigation blocks.')}
                       </p>
                     </div>
 
                     <div className="space-y-4">
                       {/* Concept 1 */}
                       <div className="space-y-1">
-                        <span className="text-[11px] font-black text-blue-400 block font-mono">1. Order Block (OB) - بلاک سفارشات</span>
+                        <span className="text-[11px] font-black text-blue-400 block font-mono">1. Order Block (OB) - {language === 'ku' ? 'بلۆکی فەرمانەکان' : 'بلاک سفارشات'}</span>
                         <p className="text-[10.5px] text-slate-400 leading-relaxed">
-                          {language === 'fa' 
-                            ? 'آخرین کندل مخالف قبل از حرکت شارپ و جابجایی قیمت. اردر بلاک خرید (Bullish OB) در کفی است که قبل از صعود تشکیل شده و قیمت با بازگشت به آن به دنبال میتیگیشن (تخلیه سفارشات باقی‌مانده) صعود می‌کند.'
-                            : 'The final counter-trend candle before a strong displacement. A Bullish OB is the demand origin candle left behind, and a Bearish OB is the supply origin. Institutions protect these levels carefully.'}
+                          {language === 'ku'
+                            ? 'دوا کاندڵی پێچەوانە پێش جووڵەی بەهێز و گۆڕانی نرخ. ئۆردەربلۆکی کڕین (Bullish OB) لەو بنی بنەیە کە پێش بەرزبوونەوە دروست بووە، و نرخ بە گەڕانەوە بۆی بەدوای کەمکردنەوەی فەرمانە هەڵپەسێردراوەکاندا بەرز دەبێتەوە.'
+                            : (language === 'fa' 
+                              ? 'آخرین کندل مخالف قبل از حرکت شارپ و جابجایی قیمت. اردر بلاک خرید (Bullish OB) در کفی است که قبل از صعود تشکیل شده و قیمت با بازگشت به آن به دنبال میتیگیشن (تخلیه سفارشات باقی‌مانده) صعود می‌کند.'
+                              : 'The final counter-trend candle before a strong displacement. A Bullish OB is the demand origin candle left behind, and a Bearish OB is the supply origin. Institutions protect these levels carefully.')}
                         </p>
                       </div>
 
                       {/* Concept 2 */}
                       <div className="space-y-1">
-                        <span className="text-[11px] font-black text-blue-450 block font-mono">2. Fair Value Gap (FVG) - فایپ</span>
+                        <span className="text-[11px] font-black text-blue-450 block font-mono">2. Fair Value Gap (FVG) - {language === 'ku' ? 'کەلێنی بەهای دادپەروەرانە' : 'فایپ'}</span>
                         <p className="text-[10.5px] text-slate-400 leading-relaxed">
-                          {language === 'fa' 
-                            ? 'شکاف یا عدم تعادل سه کندلی در بازار که ناشی از فشار خرید یا فروش خشن است. سایه کندل اول و سوم با هم هم‌پوشانی ندارند و این فضای خالی مانند مغناطیس سحرآمیز عمل کرده و بازار برای تکمیل قیمت مجدداً به این سمت کشیده می‌شود.'
-                            : 'An imbalance created by explosive unidirectional candle ranges where high/low shadows do not overlap. The market tends to treat this empty pocket like a vacuum, drafting prices inside to balance orders.'}
+                          {language === 'ku'
+                            ? 'بۆشایی یان ناهاوسەنگی سێ کاندڵ لە بازاڕدا کە بەهۆی کڕین یان فرۆشتنی توندەوە دروست دەبێت. سێبەری کاندڵی یەکەم و سێیەم یەک ناگرنەوە و ئەم بۆشاییە وەک موگناتیس کار دەکات بۆ تەواوکردنی نرخ.'
+                            : (language === 'fa' 
+                              ? 'شکاف یا عدم تعادل سه کندلی در بازار که ناشی از فشار خرید یا فروش خشن است. سایه کندل اول و سوم با هم هم‌پوشانی ندارند و این فضای خالی مانند مغناطیس سحرآمیز عمل کرده و بازار برای تکمیل قیمت مجدداً به این سمت کشیده می‌شود.'
+                              : 'An imbalance created by explosive unidirectional candle ranges where high/low shadows do not overlap. The market tends to treat this empty pocket like a vacuum, drafting prices inside to balance orders.')}
                         </p>
                       </div>
 
                       {/* Concept 3 */}
                       <div className="space-y-1">
-                        <span className="text-[11px] font-black text-blue-400 block font-mono">3. BOS & CHoCH - تغییر ساختار بازار</span>
+                        <span className="text-[11px] font-black text-blue-400 block font-mono">3. BOS & CHoCH - {language === 'ku' ? 'گۆڕینی پێکهاتەی بازاڕ' : 'تغییر ساختار بازار'}</span>
                         <p className="text-[10.5px] text-slate-400 leading-relaxed">
-                          {language === 'fa' 
-                            ? 'تغییر ماهیت قیمت (CHoCH) یعنی اولین نشانه شکسته شدن سقف یا کف قبلی در جهت مخالف که مژده از تغییر روند می‌دهد. شکست ساختار (BOS) تداوم همان روند جاری را تأیید می‌کند.'
-                            : 'Change of Character (CHoCH) is the first structural shift signaling trend reversal. Break of Structure (BOS) is successive breakups in the trend direction confirming momentum stability.'}
+                          {language === 'ku'
+                            ? 'گۆڕینی خەسڵەتی نرخ (CHoCH) یەکەم نیشانەی شکاندنی لوتکە یان بنی پێشووە لە ئاراستەی پێچەوانە کە مژدەی گۆڕانی ڕەوت دەدات. شکاندنی پێکهاتە (BOS) بەردەوامی هەمان ڕەوتی ئێستا دووپات دەکاتەوە.'
+                            : (language === 'fa' 
+                              ? 'تغییر ماهیت قیمت (CHoCH) یعنی اولین نشانه شکسته شدن سقف یا کف قبلی در جهت مخالف که مژده از تغییر روند می‌دهد. شکست ساختار (BOS) تداوم همان روند جاری را تأیید می‌کند.'
+                              : 'Change of Character (CHoCH) is the first structural shift signaling trend reversal. Break of Structure (BOS) is successive breakups in the trend direction confirming momentum stability.')}
                         </p>
                       </div>
                     </div>
@@ -1106,43 +1150,51 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                     <div className="p-4 rounded-2xl bg-amber-500/5 border border-amber-500/10 space-y-2">
                       <h4 className="text-xs font-extrabold text-amber-400 flex items-center gap-1.5 uppercase">
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>{language === 'fa' ? 'تئوری نقدینگی و تله‌گذاری موسساتی (LIT)' : 'Liquidity Inducement Theorem (LIT)'}</span>
+                        <span>{language === 'ku' ? 'تیۆری نەختینە و تەڵەدانانی دامەزراوەیی (LIT)' : (language === 'fa' ? 'تئوری نقدینگی و تله‌گذاری موسساتی (LIT)' : 'Liquidity Inducement Theorem (LIT)')}</span>
                       </h4>
                       <p className="text-[11px] text-slate-300 leading-relaxed">
-                        {language === 'fa' 
-                          ? 'استراتژی LIT بر پایه این است که بازار برای حرکت به بنزین نیاز دارد و این بنزین چیزی جز حد ضرر (Stop Loss) معامله‌گران خرد نیست. مارکت طوری سازماندهی می‌شود که شما را به تله بیندازد.'
-                          : 'Liquidity Inducement Theorem (LIT) asserts that markets require fuel to move, and this fuel is the stop losses of retail traders. Major players engineer specific structures to trick retail strategies.'}
+                        {language === 'ku'
+                          ? 'ستراتیژی LIT لەسەر بنەمای ئەوەیە کە بازاڕ بۆ جووڵە پێویستی بە سووتەمەنییە، و ئەم سووتەمەنییەش ستۆپ لۆسی بازرگانانی وردەیە. مارکێت بە شێوەیەک ڕێکدەخرێت کە بتخاتە تەڵەوە.'
+                          : (language === 'fa' 
+                            ? 'استراتژی LIT بر پایه این است که بازار برای حرکت به بنزین نیاز دارد و این بنزین چیزی جز حد ضرر (Stop Loss) معامله‌گران خرد نیست. مارکت طوری سازماندهی می‌شود که شما را به تله بیندازد.'
+                            : 'Liquidity Inducement Theorem (LIT) asserts that markets require fuel to move, and this fuel is the stop losses of retail traders. Major players engineer specific structures to trick retail strategies.')}
                       </p>
                     </div>
 
                     <div className="space-y-4">
                       {/* Concept 1 */}
                       <div className="space-y-1">
-                        <span className="text-[11px] font-black text-amber-400 block font-mono">1. Inducement (IDM) - القاء نقدینگی</span>
+                        <span className="text-[11px] font-black text-amber-400 block font-mono">1. Inducement (IDM) - {language === 'ku' ? 'هاندانی نەختینە' : 'القاء نقدینگی'}</span>
                         <p className="text-[10.5px] text-slate-400 leading-relaxed">
-                          {language === 'fa' 
-                            ? 'تله معروفی که معامله‌گر خرد را فریب داده تا فکر کند بازار روندی را شروع کرده است. برای مثال یک شکست سقف فیک ایجاد می‌شود که معامله‌گران خرد در آن اقدام به خرید سنگین می‌کنند در حالی که بانک در حال آماده‌سازی هانت است.'
-                            : 'An early trap designed to lure retail traders into taking positions prematurely (e.g., buying a minor breakout). Once they trigger their entries, institutions hunt those piled stops to power their actual execution.'}
+                          {language === 'ku'
+                            ? 'تەڵەی بەناوبانگ کە بازرگانی وردە فێڵ لێدەکات کە وا بزانێت بازاڕ ڕەوتێکی دەستپێکردووە. بۆ نموونە شکاندنی لوتکەی فەیک دروست دەبێت کە تێیدا خەڵک دەکڕن لەکاتێکدا بانک خەریکی ڕاوکردنی ستۆپە.'
+                            : (language === 'fa' 
+                              ? 'تله معروفی که معامله‌گر خرد را فریب داده تا فکر کند بازار روندی را شروع کرده است. برای مثال یک شکست سقف فیک ایجاد می‌شود که معامله‌گران خرد در آن اقدام به خرید سنگین می‌کنند در حالی که بانک در حال آماده‌سازی هانت است.'
+                              : 'An early trap designed to lure retail traders into taking positions prematurely (e.g., buying a minor breakout). Once they trigger their entries, institutions hunt those piled stops to power their actual execution.')}
                         </p>
                       </div>
 
                       {/* Concept 2 */}
                       <div className="space-y-1">
-                        <span className="text-[11px] font-black text-amber-500 block font-mono">2. Engineered Liquidity - نقدینگی مهندسی شده</span>
+                        <span className="text-[11px] font-black text-amber-500 block font-mono">2. Engineered Liquidity - {language === 'ku' ? 'نەختینەی ئەندازیاریکراو' : 'نقدینگی مهندسی شده'}</span>
                         <p className="text-[10.5px] text-slate-400 leading-relaxed">
-                          {language === 'fa' 
-                            ? 'ساخت نماهای حمایت و مقاومت تمیز یا شکست‌های خط روند. این سطوح صاف و کلاسیک باعث می‌شوند افراد فکر کنند سد محکمی است و استاپ‌های پشت آن را انباشته کنند. موسسات با خیالی آسوده تمام این استاپ‌ها را به یکباره درو می‌کنند.'
-                            : 'Clean double bottoms/tops or trendlines designed to look structurally heavy. Sizable stop-loss pools accumulate behind these transparent levels, which are later swept clean in a single flush.'}
+                          {language === 'ku'
+                            ? 'دروستکردنی پاڵپشتی و بەرگری ڕوون یان هێڵی ڕەوتی کلاسیک. ئەم ئاستانە وا دەکەن خەڵک ستۆپەکانیان لە پشتیان دابنێن، پاشان دامەزراوەکان بە یەکجار هەموو ئەو ستۆپانە دەدروونەوە.'
+                            : (language === 'fa' 
+                              ? 'ساخت نماهای حمایت و مقاومت تمیز یا شکست‌های خط روند. این سطوح صاف و کلاسیک باعث می‌شوند افراد فکر کنند سد محکمی است و استاپ‌های پشت آن را انباشته کنند. موسسات با خیالی آسوده تمام این استاپ‌ها را به یکباره درو می‌کنند.'
+                              : 'Clean double bottoms/tops or trendlines designed to look structurally heavy. Sizable stop-loss pools accumulate behind these transparent levels, which are later swept clean in a single flush.')}
                         </p>
                       </div>
 
                       {/* Concept 3 */}
                       <div className="space-y-1">
-                        <span className="text-[11px] font-black text-amber-400 block font-mono">3. Sweep & Hunt - پاکسازی استاپ‌ها</span>
+                        <span className="text-[11px] font-black text-amber-400 block font-mono">3. Sweep & Hunt - {language === 'ku' ? 'ڕاوکردنی ستۆپەکان' : 'پاکسازی استاپ‌ها'}</span>
                         <p className="text-[10.5px] text-slate-400 leading-relaxed">
-                          {language === 'fa' 
-                            ? 'هانت یا پاکسازی نقدینگی زمانی رخ می‌دهد که قیمت به سرعت سایه بلندی زیر یک سطح مهم حمایت می‌کشد، استاپ خریداران را جمع می‌کند و بلافاصله به بالا شلیک می‌شود. این مطلوب‌ترین تاییدیه برای معامله‌گر ال‌آی‌تی است.'
-                            : 'A rapid piercing wick that sweeps accumulated liquidity pools below major lows or above major highs before sharp reverse ignition. Sweeps offer high-probability entry criteria for LIT specialists.'}
+                          {language === 'ku'
+                            ? 'ڕاوکردن یان پاککردنەوەی نەختینە کاتێک ڕوودەدات کە نرخ بە خێرایی سێبەرێکی درێژ دەهاوێژێت بۆ ژێر ئاستێکی گرنگ و ستۆپی کڕیاران کۆدەکاتەوە و دەستبەجێ بەرز دەبێتەوە.'
+                            : (language === 'fa' 
+                              ? 'هانت یا پاکسازی نقدینگی زمانی رخ می‌دهد که قیمت به سرعت سایه بلندی زیر یک سطح مهم حمایت می‌کشد، استاپ خریداران را جمع می‌کند و بلافاصله به بالا شلیک می‌شود. این مطلوب‌ترین تاییدیه برای معامله‌گر ال‌آی‌تی است.'
+                              : 'A rapid piercing wick that sweeps accumulated liquidity pools below major lows or above major highs before sharp reverse ignition. Sweeps offer high-probability entry criteria for LIT specialists.')}
                         </p>
                       </div>
                     </div>
@@ -1155,48 +1207,58 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
                     <div className="p-4 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 space-y-2">
                       <h4 className="text-xs font-extrabold text-emerald-400 flex items-center gap-1.5 uppercase">
                         <Sparkles className="w-3.5 h-3.5" />
-                        <span>{language === 'fa' ? 'راهنمای گام‌به‌گام ورود ایمن همراه با محاسبات' : 'Strict Entry Standard & Sizing Strategy'}</span>
+                        <span>{language === 'ku' ? 'ڕێبەری هەنگاو بە هەنگاوی چوونەژوورەوەی پارێزراو لەگەڵ ژمێریاری' : (language === 'fa' ? 'راهنمای گام‌به‌گام ورود ایمن همراه با محاسبات' : 'Strict Entry Standard & Sizing Strategy')}</span>
                       </h4>
                       <p className="text-[11px] text-slate-300 leading-relaxed">
-                        {language === 'fa' 
-                          ? 'داشتن تحلیل درست کافی نیست؛ جادوی سوددهی مستمر تریدر در ادغام ساختار بازار با مدیریت سرمایه آهنین و محاسبه لحظه‌ای حجم پوزیشن نهفته است.'
-                          : 'High win-rate analysis is meaningless without matching capital limits. True traders blend structure maps directly with rigid lot sizing calculators to survive the random noise of institutional sweeps.'}
+                        {language === 'ku'
+                          ? 'تەنیا شیکاریی دروست بەس نییە؛ نهێنی قازانجی بەردەوام لە تێکەڵکردنی پێکهاتەی بازاڕ لەگەڵ بەڕێوەبردنی توندی سەرمایە و ژماردنی ڕاستەوخۆی لۆت دایە.'
+                          : (language === 'fa' 
+                            ? 'داشتن تحلیل درست کافی نیست؛ جادوی سوددهی مستمر تریدر در ادغام ساختار بازار با مدیریت سرمایه آهنین و محاسبه لحظه‌ای حجم پوزیشن نهفته است.'
+                            : 'High win-rate analysis is meaningless without matching capital limits. True traders blend structure maps directly with rigid lot sizing calculators to survive the random noise of institutional sweeps.')}
                       </p>
                     </div>
 
                     <div className="space-y-4 text-slate-300 text-[10.5px] leading-relaxed">
                       <div className="space-y-2">
                         <span className="font-extrabold text-emerald-400 block">
-                          {language === 'fa' ? 'چک‌لیست ۳ مرحله‌ای ورود به پوزیشن اونیگاما:' : 'Onigama 3-Step Execution Checklist:'}
+                          {language === 'ku' ? 'چێکلیستی ۳ قۆناغی چوونەژوورەوەی پۆزیشنی Onigama:' : (language === 'fa' ? 'چک‌لیست ۳ مرحله‌ای ورود به پوزیشن اونیگاما:' : 'Onigama 3-Step Execution Checklist:')}
                         </span>
                         <ul className="list-disc list-inside space-y-2 pr-2 text-slate-400">
                           <li>
-                            <strong className="text-white">{language === 'fa' ? 'گام ۱: تایید سطح اونیگاما: ' : 'Step 1: Check Onigama Level: '}</strong>
-                            {language === 'fa' 
-                              ? 'صبر کنید قیمت به یکی از سطوح اردر بلاک (SMC) یا نقاط هانت/Sweep راهنمای تحلیل اونیگاما برسد.'
-                              : 'Wait for the asset price to touch marked order blocks (SMC) or inducement sweeps in the Onigama guide.'}
+                            <strong className="text-white">{language === 'ku' ? 'هەنگاوی ۱: دڵنیابوونەوە لە ئاستی Onigama: ' : (language === 'fa' ? 'گام ۱: تایید سطح اونیگاما: ' : 'Step 1: Check Onigama Level: ')}</strong>
+                            {language === 'ku'
+                              ? 'چاوەڕێ بکە نرخ بگاتە یەکێک لە ئاستەکانی ئۆردەربلۆک (SMC) یان خاڵەکانی هانتی LIT.'
+                              : (language === 'fa' 
+                                ? 'صبر کنید قیمت به یکی از سطوح اردر بلاک (SMC) یا نقاط هانت/Sweep راهنمای تحلیل اونیگاما برسد.'
+                                : 'Wait for the asset price to touch marked order blocks (SMC) or inducement sweeps in the Onigama guide.')}
                           </li>
                           <li>
-                            <strong className="text-white">{language === 'fa' ? 'گام ۲: تاییدیه تایم‌پایین: ' : 'Step 2: Low Timeframe Confirm: '}</strong>
-                            {language === 'fa' 
-                              ? 'به تایم‌فریم کوتاه‌تر (مثل ۵m یا ۱m) بروید و منتظر ایجاد تغییر ساختار رادیکال (CHoCH) یا هانت نقدینگی کندل‌ها (Sweep) بمانید.'
-                              : 'Switch to lower timeframes (e.g. 5m/1m) and secure reaction signals such as CHoCH or a sharp candle wick sweep.'}
+                            <strong className="text-white">{language === 'ku' ? 'هەنگاوی ۲: دووپاتکردنەوەی تایمی نزم: ' : (language === 'fa' ? 'گام ۲: تاییدیه تایم‌پایین: ' : 'Step 2: Low Timeframe Confirm: ')}</strong>
+                            {language === 'ku'
+                              ? 'بڕۆ بۆ تایم‌فرەیمی کورتتر (وەک 5m یان 1m) و چاوەڕێی گۆڕانی پێکهاتە (CHoCH) یان سوویپی کاندڵەکان بە.'
+                              : (language === 'fa' 
+                                ? 'به تایم‌فریم کوتاه‌تر (مثل ۵m یا ۱m) بروید و منتظر ایجاد تغییر ساختار رادیکال (CHoCH) یا هانت نقدینگی کندل‌ها (Sweep) بمانید.'
+                                : 'Switch to lower timeframes (e.g. 5m/1m) and secure reaction signals such as CHoCH or a sharp candle wick sweep.')}
                           </li>
                           <li>
-                            <strong className="text-white">{language === 'fa' ? 'گام ۳: محاسبه دقیق لات با ماشین حساب: ' : 'Step 3: Auto-Calculate Lot Size: '}</strong>
-                            {language === 'fa' 
-                              ? 'قیمت ورود تایم‌پایین و حد ضرر را در ماشین حساب بالای همین صفحه قرار دهید. درصد ریسک دلخواه خود (پیکربندی هوشمند ۱٪ تا ۲٪) را وارد کرده و فقط با حجم "لات" به دست آمده توسط سیستم معامله را ثبت کنید.'
-                              : 'Input entry and SL targets directly into the premium positioning calculator above. Limit risk to 1% or 2%, and open precisely the lot size computed by the system.'}
+                            <strong className="text-white">{language === 'ku' ? 'هەنگاوی ۳: ژماردنی وردی لۆت بە ژمێرەر: ' : (language === 'fa' ? 'گام ۳: محاسبه دقیق لات با ماشین حساب: ' : 'Step 3: Auto-Calculate Lot Size: ')}</strong>
+                            {language === 'ku'
+                              ? 'نرخی چوونەژوورەوە و ستۆپ لۆس لە ژمێرەری سەرەوە دابنێ. ڕێژەی مەترسی ۱٪ بۆ ۲٪ دیاری بکە و تەنیا بەو لۆتەی سیستەم پێتدەدات پۆزیشن بکەرەوە.'
+                              : (language === 'fa' 
+                                ? 'قیمت ورود تایم‌پایین و حد ضرر را در ماشین حساب بالای همین صفحه قرار دهید. درصد ریسک دلخواه خود (پیکربندی هوشمند ۱٪ تا ۲٪) را وارد کرده و فقط با حجم "لات" به دست آمده توسط سیستم معامله را ثبت کنید.'
+                                : 'Input entry and SL targets directly into the premium positioning calculator above. Limit risk to 1% or 2%, and open precisely the lot size computed by the system.')}
                           </li>
                         </ul>
                       </div>
 
                       <div className="p-3 rounded-xl bg-orange-500/[0.03] border border-orange-500/15 text-orange-350 text-[10px] space-y-1">
-                        <span className="font-black">⚠️ {language === 'fa' ? 'خط قرمز معامله‌گر:' : 'TRADER COMMANDMENT:'}</span>
+                        <span className="font-black">⚠️ {language === 'ku' ? 'هێڵی سووری بازرگان:' : (language === 'fa' ? 'خط قرمز معامله‌گر:' : 'TRADER COMMANDMENT:')}</span>
                         <p>
-                          {language === 'fa' 
-                            ? 'هیچ‌گاه بدون محاسبه حجم با حد ضرر مشخص معامله نکنید. پوزیشن‌هایی که بدون حد ضرر یا بر اساس حدس حجم باز می‌شوند منشأ کال‌مارجین و شکست تریدرها در مارکت جهانی هستند.'
-                            : 'Never execute positions without predefined stop levels or custom calculations. Over-leveraged, blind lots are the absolute main source of retail failure.'}
+                          {language === 'ku'
+                            ? 'هەرگیز بەبێ ژماردنی قەبارەی لۆت و دیاریکردنی ستۆپ لۆس مامەڵە مەکە. ئەو پۆزیشنانەی بەبێ ستۆپ دەکرێنەوە هۆکاری سەرەکی شکست و سووتانی هەژماری بازرگانانن.'
+                            : (language === 'fa' 
+                              ? 'هیچ‌گاه بدون محاسبه حجم با حد ضرر مشخص معامله نکنید. پوزیشن‌هایی که بدون حد ضرر یا بر اساس حدس حجم باز می‌شوند منشأ کال‌مارجین و شکست تریدرها در مارکت جهانی هستند.'
+                              : 'Never execute positions without predefined stop levels or custom calculations. Over-leveraged, blind lots are the absolute main source of retail failure.')}
                         </p>
                       </div>
                     </div>
@@ -1208,14 +1270,14 @@ export function AnalysisPage({ language, onNavigate }: AnalysisPageProps) {
               {/* Footer Closer button */}
               <div className="p-4 border-t border-white/5 bg-[#050b13] flex justify-between items-center text-xs">
                 <span className="text-[10px] text-slate-500 font-bold">
-                  {language === 'fa' ? 'اونیگاما مربی معامله‌گری شما' : 'Onigama Trading Mentor'}
+                  {language === 'ku' ? 'Onigama ڕاهێنەری بازرگانیی تۆ' : (language === 'fa' ? 'اونیگاما مربی معامله‌گری شما' : 'Onigama Trading Mentor')}
                 </span>
                 <button
                   type="button"
                   onClick={() => setShowEduHandbook(false)}
                   className="px-4 py-1.5 rounded-xl bg-[#6f87a0] hover:bg-[#5e748d] text-white font-extrabold cursor-pointer transition-all"
                 >
-                  {language === 'fa' ? 'فهمیدم، با تشکر' : 'Understood, Thanks'}
+                  {language === 'ku' ? 'تێگەیشتم، سوپاس' : (language === 'fa' ? 'فهمیدم، با تشکر' : 'Understood, Thanks')}
                 </button>
               </div>
 
